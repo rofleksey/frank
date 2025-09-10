@@ -1,0 +1,61 @@
+package telegram_bot
+
+import (
+	"context"
+	"frank/app/service/reason"
+	"frank/app/service/telegram_sender"
+	"frank/pkg/config"
+	"frank/pkg/database"
+	"log/slog"
+
+	"github.com/go-telegram/bot"
+	"github.com/go-telegram/bot/models"
+	"github.com/samber/do"
+)
+
+type Service struct {
+	tgBot           *bot.Bot
+	cfg             *config.Config
+	queries         *database.Queries
+	tgSenderService *telegram_sender.Service
+	reasonService   *reason.Service
+}
+
+func New(di *do.Injector) (*Service, error) {
+	tgBot := do.MustInvoke[*bot.Bot](di)
+
+	service := &Service{
+		cfg:             do.MustInvoke[*config.Config](di),
+		tgBot:           tgBot,
+		queries:         do.MustInvoke[*database.Queries](di),
+		tgSenderService: do.MustInvoke[*telegram_sender.Service](di),
+		reasonService:   do.MustInvoke[*reason.Service](di),
+	}
+
+	tgBot.RegisterHandlerMatchFunc(func(update *models.Update) bool {
+		return true
+	}, service.handleUpdates)
+
+	return service, nil
+}
+
+func (s *Service) initCommands(ctx context.Context) {
+	cmds := []models.BotCommand{
+		{
+			Command:     "/cancel",
+			Description: "Отменить текущее действие",
+		},
+	}
+
+	if _, err := s.tgBot.SetMyCommands(ctx, &bot.SetMyCommandsParams{
+		Commands: cmds,
+	}); err != nil {
+		slog.ErrorContext(ctx, "Failed to set commands",
+			slog.Any("error", err),
+		)
+	}
+}
+
+func (s *Service) Run(ctx context.Context) {
+	s.initCommands(ctx)
+}
