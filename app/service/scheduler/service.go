@@ -75,7 +75,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, pro
 			func(ctx context.Context) {
 				if _, err := s.actor.Handle(ctx, prompt); err != nil {
 					slog.ErrorContext(ctx, "Failed to handle deferred command",
-						slog.Any("prompt", prompt),
+						slog.String("text", prompt.Text),
 						slog.Any("error", err),
 					)
 				}
@@ -95,7 +95,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, pro
 			gocron.AfterJobRunsWithError(func(jobID uuid.UUID, jobName string, err error) {
 				slog.Error("Job finished with error",
 					slog.String("name", name),
-					slog.Any("prompt", prompt),
+					slog.String("text", prompt.Text),
 					slog.Any("error", err),
 				)
 
@@ -106,7 +106,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, pro
 			gocron.AfterJobRunsWithPanic(func(jobID uuid.UUID, jobName string, recoverData any) {
 				slog.Error("Job panicked",
 					slog.String("name", name),
-					slog.Any("prompt", prompt),
+					slog.String("text", prompt.Text),
 					slog.Any("recoverData", recoverData),
 				)
 

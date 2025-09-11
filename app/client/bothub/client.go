@@ -112,13 +112,14 @@ func (c *Client) Process(ctx context.Context, prompt Prompt) (string, error) {
 	model := prompt.Model
 	if model == "" {
 		//model = "deepseek-chat-v3-0324"
-		model = "deepseek-r1"
+		//model = "deepseek-r1"
+		model = "deepseek-r1-0528"
 	}
 
 	requestBody := apiRequest{
 		Model:       model,
 		MaxTokens:   100000,
-		Temperature: 0.5,
+		Temperature: 0.2,
 		Messages:    messages,
 	}
 

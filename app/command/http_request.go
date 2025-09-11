@@ -47,7 +47,7 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 	)
 
 	logger.InfoContext(ctx, "Executing http_request command",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 	)
 
 	var requestData HTTPRequestCommandData

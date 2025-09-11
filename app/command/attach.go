@@ -33,7 +33,7 @@ type AttachCommandData struct {
 
 func (c *AttachCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing attach command",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 	)
 
 	var data AttachCommandData

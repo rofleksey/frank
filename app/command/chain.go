@@ -25,7 +25,7 @@ type ChainCommandData struct {
 
 func (c *ChainCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing chain command",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 	)
 
 	var data ChainCommandData

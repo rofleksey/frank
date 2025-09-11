@@ -24,11 +24,21 @@ func New(di *do.Injector) (*Service, error) {
 
 func (s *Service) Reply(ctx context.Context, text string) error {
 	_, err := s.tgBot.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: s.cfg.Telegram.ChatID,
-		Text:   text,
+		ChatID:    s.cfg.Telegram.ChatID,
+		Text:      text,
+		ParseMode: "Markdown",
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: util.ToPtr(true),
 		},
 	})
+	if err != nil {
+		_, err = s.tgBot.SendMessage(ctx, &bot.SendMessageParams{
+			ChatID: s.cfg.Telegram.ChatID,
+			Text:   text,
+			LinkPreviewOptions: &models.LinkPreviewOptions{
+				IsDisabled: util.ToPtr(true),
+			},
+		})
+	}
 	return err
 }

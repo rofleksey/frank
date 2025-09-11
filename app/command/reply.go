@@ -25,7 +25,7 @@ type ReplyCommandData struct {
 
 func (c *ReplyCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing reply command",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 	)
 
 	var data ReplyCommandData

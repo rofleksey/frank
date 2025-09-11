@@ -31,7 +31,7 @@ type ScheduleCommandData struct {
 
 func (c *ScheduleCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing schedule command",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 	)
 
 	var data ScheduleCommandData

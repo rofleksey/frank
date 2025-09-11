@@ -32,7 +32,7 @@ func (c *WebSearchCommand) Execute(ctx context.Context, prompt dto.Prompt) (stri
 	)
 
 	logger.InfoContext(ctx, "Executing web_search command",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 	)
 
 	var requestData WebSearchCommandData

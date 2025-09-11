@@ -15,7 +15,7 @@ func NewNoopCommand() *NoopCommand {
 
 func (c *NoopCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing noop command",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 	)
 
 	return "", nil

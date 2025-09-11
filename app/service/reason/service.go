@@ -56,7 +56,7 @@ func (s *Service) SetActor(actor Actor) {
 func (s *Service) Handle(prompt dto.Prompt) {
 	if prompt.Depth > maxPromptDepth {
 		slog.Error("Max prompt depth reached",
-			slog.Any("prompt", prompt),
+			slog.String("text", prompt.Text),
 		)
 		return
 	}
@@ -66,25 +66,25 @@ func (s *Service) Handle(prompt dto.Prompt) {
 		defer cancel()
 
 		slog.Info("Handling prompt",
-			slog.Any("prompt", prompt),
+			slog.String("text", prompt.Text),
 		)
 
 		err := s.handlePromptImpl(ctx, prompt)
 		if err != nil {
 			slog.Error("Failed to handle prompt",
-				slog.Any("prompt", prompt),
+				slog.String("text", prompt.Text),
 				slog.Any("error", err),
 			)
 
 			if err := s.replierService.Reply(ctx, "Failed to handle prompt: "+err.Error()); err != nil {
 				slog.Error("Failed to send message",
-					slog.Any("prompt", prompt),
+					slog.String("text", prompt.Text),
 					slog.Any("error", err),
 				)
 			}
 		} else {
 			slog.Info("Prompt handle success",
-				slog.Any("prompt", prompt),
+				slog.String("text", prompt.Text),
 			)
 		}
 	}()
@@ -111,7 +111,7 @@ func (s *Service) handlePromptImpl(ctx context.Context, prompt dto.Prompt) error
 	reasonOutput = strings.Trim(reasonOutput, "`")
 
 	slog.Info("Got a result from bothub client",
-		slog.Any("prompt", prompt),
+		slog.String("text", prompt.Text),
 		slog.Any("output", reasonOutput),
 	)
 
