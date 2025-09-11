@@ -30,8 +30,10 @@ type Prompt struct {
 
 // apiRequest represents the request payload for the Bothub API
 type apiRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
+	Model       string    `json:"model"`
+	MaxTokens   int       `json:"max_tokens"`
+	Temperature float32   `json:"temperature"`
+	Messages    []Message `json:"messages"`
 }
 
 // Message represents a single message in the conversation
@@ -109,12 +111,15 @@ func (c *Client) Process(ctx context.Context, prompt Prompt) (string, error) {
 
 	model := prompt.Model
 	if model == "" {
-		model = "deepseek-chat-v3-0324"
+		//model = "deepseek-chat-v3-0324"
+		model = "deepseek-r1"
 	}
 
 	requestBody := apiRequest{
-		Model:    model,
-		Messages: messages,
+		Model:       model,
+		MaxTokens:   100000,
+		Temperature: 0.5,
+		Messages:    messages,
 	}
 
 	jsonData, err := json.Marshal(requestBody)

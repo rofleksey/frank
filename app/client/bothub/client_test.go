@@ -20,11 +20,6 @@ func TestClient_Process_Integration(t *testing.T) {
 	cfg, err := config.Load()
 	require.NoError(t, err)
 
-	// Check if Bothub token is configured for integration tests
-	if cfg.Bothub.Token == "" {
-		t.Skip("Skipping integration test: Bothub token not configured")
-	}
-
 	// Setup dependency injection
 	di := do.New()
 	do.ProvideValue(di, cfg)

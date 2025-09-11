@@ -10,14 +10,12 @@ import (
 )
 
 type ReplyCommand struct {
-	chatID int64
-	sender MessageSender
+	replier Replier
 }
 
-func NewReplyCommand(chatID int64, sender MessageSender) *ReplyCommand {
+func NewReplyCommand(replier Replier) *ReplyCommand {
 	return &ReplyCommand{
-		chatID: chatID,
-		sender: sender,
+		replier: replier,
 	}
 }
 
@@ -40,7 +38,7 @@ func (c *ReplyCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, 
 		return "", fmt.Errorf("empty text")
 	}
 
-	if err := c.sender.SendMessage(ctx, c.chatID, data.Text); err != nil {
+	if err := c.replier.Reply(ctx, data.Text); err != nil {
 		return "", fmt.Errorf("send message: %w", err)
 	}
 

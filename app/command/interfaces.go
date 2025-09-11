@@ -6,8 +6,8 @@ import (
 	"time"
 )
 
-type MessageSender interface {
-	SendMessage(ctx context.Context, chatID int64, text string) error
+type Replier interface {
+	Reply(ctx context.Context, text string) error
 }
 
 type Reasoner interface {
@@ -25,4 +25,8 @@ type Scheduler interface {
 
 type SecretsManager interface {
 	Fill(text string) string
+}
+
+type WebSearchEngine interface {
+	WebSearch(ctx context.Context, query string) (string, error)
 }

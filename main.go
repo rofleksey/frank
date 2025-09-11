@@ -4,12 +4,13 @@ package main
 import (
 	"context"
 	"frank/app/client/bothub"
+	"frank/app/client/yandex"
 	"frank/app/service/act"
 	"frank/app/service/reason"
 	"frank/app/service/scheduler"
 	"frank/app/service/secret"
 	"frank/app/service/telegram_bot"
-	"frank/app/service/telegram_sender"
+	"frank/app/service/telegram_reply"
 	"frank/pkg/config"
 	"frank/pkg/database"
 	"frank/pkg/migration"
@@ -83,9 +84,10 @@ func main() {
 	do.ProvideValue(di, telegramBot)
 
 	do.Provide(di, bothub.NewClient)
+	do.Provide(di, yandex.NewClient)
 	do.Provide(di, secret.New)
 	do.Provide(di, telegram_bot.New)
-	do.Provide(di, telegram_sender.New)
+	do.Provide(di, telegram_reply.New)
 	do.Provide(di, reason.New)
 	do.Provide(di, act.New)
 	do.Provide(di, scheduler.New)

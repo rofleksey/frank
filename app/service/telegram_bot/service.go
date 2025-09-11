@@ -3,7 +3,7 @@ package telegram_bot
 import (
 	"context"
 	"frank/app/service/reason"
-	"frank/app/service/telegram_sender"
+	"frank/app/service/telegram_reply"
 	"frank/pkg/config"
 	"frank/pkg/database"
 	"log/slog"
@@ -14,22 +14,22 @@ import (
 )
 
 type Service struct {
-	tgBot           *bot.Bot
-	cfg             *config.Config
-	queries         *database.Queries
-	tgSenderService *telegram_sender.Service
-	reasonService   *reason.Service
+	tgBot         *bot.Bot
+	cfg           *config.Config
+	queries       *database.Queries
+	replyService  *telegram_reply.Service
+	reasonService *reason.Service
 }
 
 func New(di *do.Injector) (*Service, error) {
 	tgBot := do.MustInvoke[*bot.Bot](di)
 
 	service := &Service{
-		cfg:             do.MustInvoke[*config.Config](di),
-		tgBot:           tgBot,
-		queries:         do.MustInvoke[*database.Queries](di),
-		tgSenderService: do.MustInvoke[*telegram_sender.Service](di),
-		reasonService:   do.MustInvoke[*reason.Service](di),
+		cfg:           do.MustInvoke[*config.Config](di),
+		tgBot:         tgBot,
+		queries:       do.MustInvoke[*database.Queries](di),
+		replyService:  do.MustInvoke[*telegram_reply.Service](di),
+		reasonService: do.MustInvoke[*reason.Service](di),
 	}
 
 	tgBot.RegisterHandlerMatchFunc(func(update *models.Update) bool {

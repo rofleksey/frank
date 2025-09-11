@@ -11,15 +11,13 @@ import (
 )
 
 type ScheduleCommand struct {
-	chatID    int64
-	sender    MessageSender
+	replier   Replier
 	scheduler Scheduler
 }
 
-func NewScheduleCommand(chatID int64, sender MessageSender, scheduler Scheduler) *ScheduleCommand {
+func NewScheduleCommand(replier Replier, scheduler Scheduler) *ScheduleCommand {
 	return &ScheduleCommand{
-		chatID:    chatID,
-		sender:    sender,
+		replier:   replier,
 		scheduler: scheduler,
 	}
 }
@@ -52,7 +50,7 @@ func (c *ScheduleCommand) Execute(ctx context.Context, prompt dto.Prompt) (strin
 			return "", fmt.Errorf("ScheduleCron: %w", err)
 		}
 
-		if err := c.sender.SendMessage(ctx, c.chatID, "Scheduled a cron job: "+data.Time); err != nil {
+		if err := c.replier.Reply(ctx, "Scheduled a cron job: "+data.Time); err != nil {
 			return "", fmt.Errorf("send message: %w", err)
 		}
 	case "one-time":
@@ -65,7 +63,7 @@ func (c *ScheduleCommand) Execute(ctx context.Context, prompt dto.Prompt) (strin
 			return "", fmt.Errorf("ScheduleOneTime: %w", err)
 		}
 
-		if err := c.sender.SendMessage(ctx, c.chatID, "Scheduled a one time job at "+data.Time); err != nil {
+		if err := c.replier.Reply(ctx, "Scheduled a one time job at "+data.Time); err != nil {
 			return "", fmt.Errorf("send message: %w", err)
 		}
 	default:

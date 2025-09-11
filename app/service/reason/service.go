@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"frank/app/client/bothub"
 	"frank/app/dto"
-	"frank/app/service/telegram_sender"
+	"frank/app/service/telegram_reply"
 	"frank/pkg/config"
 	"frank/pkg/database"
 	"log/slog"
@@ -30,22 +30,22 @@ type Actor interface {
 }
 
 type Service struct {
-	appCtx                context.Context
-	cfg                   *config.Config
-	queries               *database.Queries
-	telegramSenderService *telegram_sender.Service
-	bothubClient          *bothub.Client
+	appCtx         context.Context
+	cfg            *config.Config
+	queries        *database.Queries
+	replierService *telegram_reply.Service
+	bothubClient   *bothub.Client
 
 	actor Actor
 }
 
 func New(di *do.Injector) (*Service, error) {
 	return &Service{
-		appCtx:                do.MustInvoke[context.Context](di),
-		cfg:                   do.MustInvoke[*config.Config](di),
-		queries:               do.MustInvoke[*database.Queries](di),
-		telegramSenderService: do.MustInvoke[*telegram_sender.Service](di),
-		bothubClient:          do.MustInvoke[*bothub.Client](di),
+		appCtx:         do.MustInvoke[context.Context](di),
+		cfg:            do.MustInvoke[*config.Config](di),
+		queries:        do.MustInvoke[*database.Queries](di),
+		replierService: do.MustInvoke[*telegram_reply.Service](di),
+		bothubClient:   do.MustInvoke[*bothub.Client](di),
 	}, nil
 }
 
@@ -76,7 +76,7 @@ func (s *Service) Handle(prompt dto.Prompt) {
 				slog.Any("error", err),
 			)
 
-			if err := s.telegramSenderService.SendMessage(ctx, s.cfg.Telegram.ChatID, "Failed to handle prompt: "+err.Error()); err != nil {
+			if err := s.replierService.Reply(ctx, "Failed to handle prompt: "+err.Error()); err != nil {
 				slog.Error("Failed to send message",
 					slog.Any("prompt", prompt),
 					slog.Any("error", err),
@@ -96,9 +96,11 @@ func (s *Service) handlePromptImpl(ctx context.Context, prompt dto.Prompt) error
 		return fmt.Errorf("failed to generate system prompt: %w", err)
 	}
 
+	userPrompt := prompt.Text + "\n\n" + s.generateAttachmentsDescription(&prompt)
+
 	reasonOutput, err := s.bothubClient.Process(ctx, bothub.Prompt{
 		SystemText: systemPrompt,
-		UserText:   prompt.Text,
+		UserText:   userPrompt,
 	})
 	if err != nil {
 		return fmt.Errorf("gptClient.Process: %w", err)
@@ -130,7 +132,6 @@ func (s *Service) generateSystemPrompt(ctx context.Context, prompt *dto.Prompt) 
 
 	result = strings.ReplaceAll(result, "{commands}", s.actor.CommandsDescription())
 	result = strings.ReplaceAll(result, "{context}", contextDescription)
-	result = strings.ReplaceAll(result, "{attachments}", s.generateAttachmentsDescription(prompt))
 
 	return result, nil
 }
@@ -162,10 +163,12 @@ func (s *Service) generateContextDescription(ctx context.Context) (string, error
 
 func (s *Service) generateAttachmentsDescription(prompt *dto.Prompt) string {
 	if len(prompt.Attachments) == 0 {
-		return "(no attachments)\n"
+		return ""
 	}
 
 	var builder strings.Builder
+
+	builder.WriteString("# ATTACHMENTS\n\n")
 
 	for _, att := range prompt.Attachments {
 		builder.WriteString("## ")

@@ -1,7 +1,8 @@
-package telegram_sender
+package telegram_reply
 
 import (
 	"context"
+	"frank/pkg/config"
 	"frank/pkg/util"
 
 	"github.com/go-telegram/bot"
@@ -10,18 +11,20 @@ import (
 )
 
 type Service struct {
+	cfg   *config.Config
 	tgBot *bot.Bot
 }
 
 func New(di *do.Injector) (*Service, error) {
 	return &Service{
+		cfg:   do.MustInvoke[*config.Config](di),
 		tgBot: do.MustInvoke[*bot.Bot](di),
 	}, nil
 }
 
-func (s *Service) SendMessage(ctx context.Context, chatID int64, text string) error {
+func (s *Service) Reply(ctx context.Context, text string) error {
 	_, err := s.tgBot.SendMessage(ctx, &bot.SendMessageParams{
-		ChatID: chatID,
+		ChatID: s.cfg.Telegram.ChatID,
 		Text:   text,
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: util.ToPtr(true),

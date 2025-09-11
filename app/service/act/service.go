@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"frank/app/client/yandex"
 	"frank/app/command"
 	"frank/app/dto"
 	"frank/app/service/reason"
 	"frank/app/service/scheduler"
-	"frank/app/service/telegram_sender"
+	"frank/app/service/secret"
+	"frank/app/service/telegram_reply"
 	"frank/pkg/config"
 	"frank/pkg/database"
 
@@ -30,9 +32,11 @@ type Service struct {
 
 func New(di *do.Injector) (*Service, error) {
 	cfg := do.MustInvoke[*config.Config](di)
-	telegramSender := do.MustInvoke[*telegram_sender.Service](di)
+	yandexClient := do.MustInvoke[*yandex.Client](di)
+	replyService := do.MustInvoke[*telegram_reply.Service](di)
 	schedulerService := do.MustInvoke[*scheduler.Service](di)
 	reasonService := do.MustInvoke[*reason.Service](di)
+	secretsService := do.MustInvoke[*secret.Service](di)
 
 	actService := &Service{
 		cfg:     cfg,
@@ -41,11 +45,12 @@ func New(di *do.Injector) (*Service, error) {
 
 	commands := []Command{
 		command.NewNoopCommand(),
-		command.NewReplyCommand(cfg.Telegram.ChatID, telegramSender),
-		command.NewScheduleCommand(cfg.Telegram.ChatID, telegramSender, schedulerService),
-		command.NewChainCommand(actService),
-		command.NewHTTPRequestCommand(),
+		command.NewReplyCommand(replyService),
+		command.NewScheduleCommand(replyService, schedulerService),
+		command.NewHTTPRequestCommand(replyService, secretsService),
+		command.NewWebSearchCommand(replyService, yandexClient),
 		command.NewAttachCommand(actService, reasonService),
+		command.NewChainCommand(actService),
 	}
 
 	actService.commands = commands
