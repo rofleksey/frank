@@ -3,7 +3,7 @@ package main
 
 import (
 	"context"
-	"frank/app/client/gpt"
+	"frank/app/client/bothub"
 	"frank/app/service/act"
 	"frank/app/service/reason"
 	"frank/app/service/scheduler"
@@ -83,7 +83,7 @@ func main() {
 	go telegramBot.Start(appCtx)
 	do.ProvideValue(di, telegramBot)
 
-	do.Provide(di, gpt.NewYandexGpt)
+	do.Provide(di, bothub.NewClient)
 	do.Provide(di, telegram_bot.New)
 	do.Provide(di, telegram_sender.New)
 	do.Provide(di, reason.New)

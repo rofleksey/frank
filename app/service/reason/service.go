@@ -3,7 +3,7 @@ package reason
 import (
 	"context"
 	"fmt"
-	"frank/app/client/gpt"
+	"frank/app/client/bothub"
 	"frank/app/service/act"
 	"frank/app/service/telegram_sender"
 	"frank/pkg/config"
@@ -28,7 +28,7 @@ type Service struct {
 	queries               *database.Queries
 	telegramSenderService *telegram_sender.Service
 	actService            *act.Service
-	gptClient             *gpt.YandexGpt
+	bothubClient          *bothub.Client
 }
 
 func New(di *do.Injector) (*Service, error) {
@@ -38,7 +38,7 @@ func New(di *do.Injector) (*Service, error) {
 		queries:               do.MustInvoke[*database.Queries](di),
 		telegramSenderService: do.MustInvoke[*telegram_sender.Service](di),
 		actService:            do.MustInvoke[*act.Service](di),
-		gptClient:             do.MustInvoke[*gpt.YandexGpt](di),
+		bothubClient:          do.MustInvoke[*bothub.Client](di),
 	}, nil
 }
 
@@ -78,15 +78,16 @@ func (s *Service) handlePromptImpl(ctx context.Context, text string) error {
 		return fmt.Errorf("failed to generate system prompt: %w", err)
 	}
 
-	reasonOutput, err := s.gptClient.Process(ctx, gpt.Prompt{
+	reasonOutput, err := s.bothubClient.Process(ctx, bothub.Prompt{
 		SystemText: systemPrompt,
-		Text:       text,
+		UserText:   text,
 	})
 	if err != nil {
 		return fmt.Errorf("gptClient.Process: %w", err)
 	}
 
 	reasonOutput = strings.TrimSpace(reasonOutput)
+	reasonOutput = strings.TrimPrefix(reasonOutput, "```json")
 	reasonOutput = strings.Trim(reasonOutput, "`")
 
 	dataBytes := []byte(reasonOutput)

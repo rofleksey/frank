@@ -21,12 +21,16 @@ type Config struct {
 		ChatID int64  `yaml:"chatId" validate:"required"`
 	} `yaml:"telegram"`
 
+	Bothub struct {
+		Token string `yaml:"token" validate:"required"`
+	} `yaml:"bothub"`
+
 	Yandex struct {
 		ServiceAccountID string `yaml:"serviceAccountId" validate:"required"`
 		FolderID         string `yaml:"folderId" validate:"required"`
 		KeyID            string `yaml:"keyId" validate:"required"`
 		Key              string `yaml:"key" validate:"required"`
-	}
+	} `yaml:"yandex"`
 
 	DB struct {
 		User     string `yaml:"user" validate:"required"`

@@ -54,16 +54,10 @@ func (c *ReplyCommand) Description() string {
 	return strings.TrimSpace(`
     type: object
     properties:
-      command:
-        type: string
-        enum: 
-          - reply
-        description: command type, must be 'reply'
       text:
         type: string
         description: The text content of the reply
     required:
-      - command
       - text
     description: sends a message to the user
   `)

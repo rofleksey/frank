@@ -89,7 +89,7 @@ func (c *ScheduleCommand) Description() string {
       time:
         type: string
         description: |
-          Schedule time value. For "cron" type, this should be a valid cron expression (without seconds, everything starts from 0, including day numbers [0-6]).
+          Schedule time value. For "cron" type, this should be a valid cron expression (without seconds, DAYS START FROM ZERO (!!!) [0-6]).
           For "one-time" type, this should be an ISO 8601 formatted datetime string.
         example: "0 0 * * *"  # for cron type
         # example: "2023-12-25T10:30:00Z"  # for one-time type

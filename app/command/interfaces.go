@@ -10,7 +10,7 @@ type MessageSender interface {
 }
 
 type Actor interface {
-	HandleMessage(ctx context.Context, dataBytes []byte) error
+	Handle(ctx context.Context, dataBytes []byte) error
 }
 
 type Scheduler interface {

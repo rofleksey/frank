@@ -31,20 +31,22 @@ func New(di *do.Injector) (*Service, error) {
 	telegramSender := do.MustInvoke[*telegram_sender.Service](di)
 	schedulerService := do.MustInvoke[*scheduler.Service](di)
 
+	service := &Service{
+		cfg:     cfg,
+		queries: do.MustInvoke[*database.Queries](di),
+	}
+
 	commands := []Command{
 		command.NewNoopCommand(),
 		command.NewReplyCommand(cfg.Telegram.ChatID, telegramSender),
 		command.NewScheduleCommand(cfg.Telegram.ChatID, telegramSender, schedulerService),
+		command.NewSeqCommand(service),
 	}
 
-	description := generateDescription(commands)
+	service.commands = commands
+	service.description = generateDescription(commands)
 
-	return &Service{
-		cfg:         cfg,
-		queries:     do.MustInvoke[*database.Queries](di),
-		commands:    commands,
-		description: description,
-	}, nil
+	return service, nil
 }
 
 type GenericCommandData struct {
