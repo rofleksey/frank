@@ -74,7 +74,7 @@ func NewClient(di *do.Injector) (*Client, error) {
 
 	return &Client{
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 5 * time.Minute,
 		},
 		token:   cfg.Bothub.Token,
 		baseURL: "https://bothub.chat/api/v2/openai/v1/chat/completions",

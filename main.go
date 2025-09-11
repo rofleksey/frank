@@ -91,8 +91,10 @@ func main() {
 	go telegramBot.Start(appCtx)
 	defer telegramBot.Close(appCtx)
 
-	do.MustInvoke[*scheduler.Service](di).SetActor(do.MustInvoke[*act.Service](di))
 	go do.MustInvoke[*telegram_bot.Service](di).Run(appCtx)
+
+	do.MustInvoke[*reason.Service](di).SetActor(do.MustInvoke[*act.Service](di))
+	do.MustInvoke[*scheduler.Service](di).SetActor(do.MustInvoke[*act.Service](di))
 
 	if err = do.MustInvoke[*scheduler.Service](di).Start(); err != nil {
 		log.Fatalf("failed to start scheduler: %v", err)

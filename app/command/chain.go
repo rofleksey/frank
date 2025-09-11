@@ -23,7 +23,7 @@ type ChainCommandData struct {
 	List []json.RawMessage `json:"list"`
 }
 
-func (c *ChainCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
+func (c *ChainCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing chain command",
 		slog.Any("prompt", prompt),
 	)
@@ -31,7 +31,7 @@ func (c *ChainCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 	var data ChainCommandData
 
 	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+		return "", fmt.Errorf("json unmarshal: %w", err)
 	}
 
 	for i, subCommand := range data.List {
@@ -40,12 +40,12 @@ func (c *ChainCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 			slog.String("text", string(subCommand)),
 		)
 
-		if err := c.actor.Handle(ctx, prompt.BranchWithNewText(string(subCommand))); err != nil {
-			return fmt.Errorf("failed to handle subcommand %s: %w", string(subCommand), err)
+		if _, err := c.actor.Handle(ctx, prompt.BranchWithNewText(string(subCommand))); err != nil {
+			return "", fmt.Errorf("failed to handle subcommand %s: %w", string(subCommand), err)
 		}
 	}
 
-	return nil
+	return "", nil
 }
 
 func (c *ChainCommand) Name() string {

@@ -2,6 +2,7 @@ package telegram_bot
 
 import (
 	"context"
+	"frank/app/dto"
 	"strings"
 )
 
@@ -15,5 +16,5 @@ func (s *Service) handleUnknownMessage(_ context.Context, text string) {
 		return
 	}
 
-	s.reasonService.HandleNewPrompt(text)
+	s.reasonService.Handle(dto.NewPrompt(text))
 }

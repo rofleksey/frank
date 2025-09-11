@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"frank/app/command"
 	"frank/app/dto"
+	"frank/app/service/reason"
 	"frank/app/service/scheduler"
 	"frank/app/service/telegram_sender"
 	"frank/pkg/config"
@@ -15,7 +16,7 @@ import (
 )
 
 type Command interface {
-	Handle(ctx context.Context, prompt dto.Prompt) error
+	Execute(ctx context.Context, prompt dto.Prompt) (string, error)
 	Name() string
 	Description() string
 }
@@ -31,8 +32,9 @@ func New(di *do.Injector) (*Service, error) {
 	cfg := do.MustInvoke[*config.Config](di)
 	telegramSender := do.MustInvoke[*telegram_sender.Service](di)
 	schedulerService := do.MustInvoke[*scheduler.Service](di)
+	reasonService := do.MustInvoke[*reason.Service](di)
 
-	service := &Service{
+	actService := &Service{
 		cfg:     cfg,
 		queries: do.MustInvoke[*database.Queries](di),
 	}
@@ -41,28 +43,30 @@ func New(di *do.Injector) (*Service, error) {
 		command.NewNoopCommand(),
 		command.NewReplyCommand(cfg.Telegram.ChatID, telegramSender),
 		command.NewScheduleCommand(cfg.Telegram.ChatID, telegramSender, schedulerService),
-		command.NewChainCommand(service),
+		command.NewChainCommand(actService),
+		command.NewHTTPRequestCommand(),
+		command.NewAttachCommand(actService, reasonService),
 	}
 
-	service.commands = commands
-	service.description = generateDescription(commands)
+	actService.commands = commands
+	actService.description = generateDescription(commands)
 
-	return service, nil
+	return actService, nil
 }
 
 type GenericCommandData struct {
 	Command string `json:"command"`
 }
 
-func (s *Service) Handle(ctx context.Context, prompt dto.Prompt) error {
+func (s *Service) Handle(ctx context.Context, prompt dto.Prompt) (string, error) {
 	var data GenericCommandData
 
 	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+		return "", fmt.Errorf("json unmarshal: %w", err)
 	}
 
 	if data.Command == "" {
-		return fmt.Errorf("command is empty")
+		return "", fmt.Errorf("command is empty")
 	}
 
 	var cmd Command
@@ -75,14 +79,15 @@ func (s *Service) Handle(ctx context.Context, prompt dto.Prompt) error {
 	}
 
 	if cmd == nil {
-		return fmt.Errorf("command not found: %s", data.Command)
+		return "", fmt.Errorf("command not found: %s", data.Command)
 	}
 
-	if err := cmd.Handle(ctx, prompt); err != nil {
-		return fmt.Errorf("command.Handle failed for command %s: %w", cmd.Name(), err)
+	output, err := cmd.Execute(ctx, prompt)
+	if err != nil {
+		return "", fmt.Errorf("command.Handle failed for command %s: %w", cmd.Name(), err)
 	}
 
-	return nil
+	return output, nil
 }
 
 func (s *Service) CommandsDescription() string {

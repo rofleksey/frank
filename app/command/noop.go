@@ -13,12 +13,12 @@ func NewNoopCommand() *NoopCommand {
 	return &NoopCommand{}
 }
 
-func (c *NoopCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
+func (c *NoopCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing noop command",
 		slog.Any("prompt", prompt),
 	)
 
-	return nil
+	return "", nil
 }
 
 func (c *NoopCommand) Name() string {

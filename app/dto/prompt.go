@@ -14,6 +14,15 @@ type Prompt struct {
 	Attachments []Attachment `json:"attachments"`
 }
 
+func NewPrompt(text string) Prompt {
+	return Prompt{
+		ID:          uuid.New(),
+		Text:        text,
+		Depth:       0,
+		Attachments: nil,
+	}
+}
+
 func (p *Prompt) BranchWithNewText(text string) Prompt {
 	attachmentsCopy := make([]Attachment, len(p.Attachments))
 	copy(attachmentsCopy, p.Attachments)

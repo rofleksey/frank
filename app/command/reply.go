@@ -25,7 +25,7 @@ type ReplyCommandData struct {
 	Text string `json:"text"`
 }
 
-func (c *ReplyCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
+func (c *ReplyCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing reply command",
 		slog.Any("prompt", prompt),
 	)
@@ -33,18 +33,18 @@ func (c *ReplyCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 	var data ReplyCommandData
 
 	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+		return "", fmt.Errorf("json unmarshal: %w", err)
 	}
 
 	if data.Text == "" {
-		return fmt.Errorf("empty text")
+		return "", fmt.Errorf("empty text")
 	}
 
 	if err := c.sender.SendMessage(ctx, c.chatID, data.Text); err != nil {
-		return fmt.Errorf("send message: %w", err)
+		return "", fmt.Errorf("send message: %w", err)
 	}
 
-	return nil
+	return "", nil
 }
 
 func (c *ReplyCommand) Name() string {

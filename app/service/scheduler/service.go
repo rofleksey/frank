@@ -17,7 +17,7 @@ import (
 var _ do.Shutdownable = (*Service)(nil)
 
 type Actor interface {
-	Handle(ctx context.Context, prompt dto.Prompt) error
+	Handle(ctx context.Context, prompt dto.Prompt) (string, error)
 }
 
 type Service struct {
@@ -73,7 +73,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, pro
 		jobDef,
 		gocron.NewTask(
 			func(ctx context.Context) {
-				if err := s.actor.Handle(ctx, prompt); err != nil {
+				if _, err := s.actor.Handle(ctx, prompt); err != nil {
 					slog.ErrorContext(ctx, "Failed to handle deferred command",
 						slog.Any("prompt", prompt),
 						slog.Any("error", err),

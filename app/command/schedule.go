@@ -31,7 +31,7 @@ type ScheduleCommandData struct {
 	ScheduledCommand json.RawMessage `json:"scheduled_command"`
 }
 
-func (c *ScheduleCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
+func (c *ScheduleCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing schedule command",
 		slog.Any("prompt", prompt),
 	)
@@ -39,40 +39,40 @@ func (c *ScheduleCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 	var data ScheduleCommandData
 
 	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
-		return fmt.Errorf("json unmarshal: %w", err)
+		return "", fmt.Errorf("json unmarshal: %w", err)
 	}
 
 	if data.Name == "" {
-		return fmt.Errorf("schedule command name is empty")
+		return "", fmt.Errorf("schedule command name is empty")
 	}
 
 	switch data.Type {
 	case "cron":
 		if err := c.scheduler.ScheduleCron(data.Name, data.Time, prompt.BranchWithNewText(string(data.ScheduledCommand))); err != nil {
-			return fmt.Errorf("ScheduleCron: %w", err)
+			return "", fmt.Errorf("ScheduleCron: %w", err)
 		}
 
 		if err := c.sender.SendMessage(ctx, c.chatID, "Scheduled a cron job: "+data.Time); err != nil {
-			return fmt.Errorf("send message: %w", err)
+			return "", fmt.Errorf("send message: %w", err)
 		}
 	case "one-time":
 		actualTime, err := time.Parse(time.RFC3339, data.Time)
 		if err != nil {
-			return fmt.Errorf("parse time: %w", err)
+			return "", fmt.Errorf("parse time: %w", err)
 		}
 
 		if err := c.scheduler.ScheduleOneTime(data.Name, actualTime, prompt.BranchWithNewText(string(data.ScheduledCommand))); err != nil {
-			return fmt.Errorf("ScheduleOneTime: %w", err)
+			return "", fmt.Errorf("ScheduleOneTime: %w", err)
 		}
 
 		if err := c.sender.SendMessage(ctx, c.chatID, "Scheduled a one time job at "+data.Time); err != nil {
-			return fmt.Errorf("send message: %w", err)
+			return "", fmt.Errorf("send message: %w", err)
 		}
 	default:
-		return fmt.Errorf("unknown schedule type: %s", data.Type)
+		return "", fmt.Errorf("unknown schedule type: %s", data.Type)
 	}
 
-	return nil
+	return "", nil
 }
 
 func (c *ScheduleCommand) Name() string {
