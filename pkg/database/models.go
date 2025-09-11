@@ -22,12 +22,6 @@ type Migration struct {
 	Applied time.Time
 }
 
-type Prompt struct {
-	ID      int64
-	Created time.Time
-	Data    []byte
-}
-
 type ScheduledJob struct {
 	Name    string
 	Created time.Time

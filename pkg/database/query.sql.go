@@ -69,27 +69,6 @@ func (q *Queries) CreateMigration(ctx context.Context, arg CreateMigrationParams
 	return id, err
 }
 
-const createPrompt = `-- name: CreatePrompt :one
-INSERT INTO prompts (created, data)
-VALUES ($1, $2) RETURNING id
-`
-
-type CreatePromptParams struct {
-	Created time.Time
-	Data    []byte
-}
-
-// CreatePrompt
-//
-//	INSERT INTO prompts (created, data)
-//	VALUES ($1, $2) RETURNING id
-func (q *Queries) CreatePrompt(ctx context.Context, arg CreatePromptParams) (int64, error) {
-	row := q.db.QueryRow(ctx, createPrompt, arg.Created, arg.Data)
-	var id int64
-	err := row.Scan(&id)
-	return id, err
-}
-
 const createScheduledJob = `-- name: CreateScheduledJob :exec
 INSERT INTO scheduled_jobs (name, created, data)
 VALUES ($1, $2, $3)
@@ -164,12 +143,25 @@ func (q *Queries) GetContextEntry(ctx context.Context, id string) (ContextEntry,
 }
 
 const getMigrations = `-- name: GetMigrations :many
+
 SELECT id, applied
 FROM migration
 ORDER BY id
 `
 
-// GetMigrations
+// -- name: CreatePrompt :one
+// INSERT INTO prompts (created, data)
+// VALUES ($1, $2) RETURNING id;
+//
+// -- name: GetPrompt :one
+// SELECT *
+// FROM prompts
+// WHERE id = $1;
+//
+// -- name: UpdatePrompt :exec
+// UPDATE prompts
+// SET data = $2
+// WHERE id = $1;
 //
 //	SELECT id, applied
 //	FROM migration
@@ -192,24 +184,6 @@ func (q *Queries) GetMigrations(ctx context.Context) ([]Migration, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const getPrompt = `-- name: GetPrompt :one
-SELECT id, created, data
-FROM prompts
-WHERE id = $1
-`
-
-// GetPrompt
-//
-//	SELECT id, created, data
-//	FROM prompts
-//	WHERE id = $1
-func (q *Queries) GetPrompt(ctx context.Context, id int64) (Prompt, error) {
-	row := q.db.QueryRow(ctx, getPrompt, id)
-	var i Prompt
-	err := row.Scan(&i.ID, &i.Created, &i.Data)
-	return i, err
 }
 
 const getScheduledJob = `-- name: GetScheduledJob :one
@@ -367,25 +341,4 @@ func (q *Queries) ListScheduledJobs(ctx context.Context) ([]ScheduledJob, error)
 		return nil, err
 	}
 	return items, nil
-}
-
-const updatePrompt = `-- name: UpdatePrompt :exec
-UPDATE prompts
-SET data = $2
-WHERE id = $1
-`
-
-type UpdatePromptParams struct {
-	ID   int64
-	Data []byte
-}
-
-// UpdatePrompt
-//
-//	UPDATE prompts
-//	SET data = $2
-//	WHERE id = $1
-func (q *Queries) UpdatePrompt(ctx context.Context, arg UpdatePromptParams) error {
-	_, err := q.db.Exec(ctx, updatePrompt, arg.ID, arg.Data)
-	return err
 }

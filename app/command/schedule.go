@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"frank/app/dto"
 	"log/slog"
 	"strings"
 	"time"
@@ -30,14 +31,14 @@ type ScheduleCommandData struct {
 	ScheduledCommand json.RawMessage `json:"scheduled_command"`
 }
 
-func (c *ScheduleCommand) Handle(ctx context.Context, dataBytes []byte) error {
+func (c *ScheduleCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 	slog.Info("Executing schedule command",
-		slog.String("text", string(dataBytes)),
+		slog.Any("prompt", prompt),
 	)
 
 	var data ScheduleCommandData
 
-	if err := json.Unmarshal(dataBytes, &data); err != nil {
+	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
@@ -47,7 +48,7 @@ func (c *ScheduleCommand) Handle(ctx context.Context, dataBytes []byte) error {
 
 	switch data.Type {
 	case "cron":
-		if err := c.scheduler.ScheduleCron(data.Name, data.Time, data.ScheduledCommand); err != nil {
+		if err := c.scheduler.ScheduleCron(data.Name, data.Time, prompt.BranchWithNewText(string(data.ScheduledCommand))); err != nil {
 			return fmt.Errorf("ScheduleCron: %w", err)
 		}
 
@@ -60,7 +61,7 @@ func (c *ScheduleCommand) Handle(ctx context.Context, dataBytes []byte) error {
 			return fmt.Errorf("parse time: %w", err)
 		}
 
-		if err := c.scheduler.ScheduleOneTime(data.Name, actualTime, data.ScheduledCommand); err != nil {
+		if err := c.scheduler.ScheduleOneTime(data.Name, actualTime, prompt.BranchWithNewText(string(data.ScheduledCommand))); err != nil {
 			return fmt.Errorf("ScheduleOneTime: %w", err)
 		}
 
@@ -94,7 +95,7 @@ func (c *ScheduleCommand) Description() string {
           - schedule
       name:
         type: string
-        description: Short but meaningful name of the command, alphanumerical, snake-case
+        description: Short but meaningful name of the scheduled job, alphanumerical, snake-case
       type:
         type: string
         enum: [cron, one-time]
@@ -107,7 +108,7 @@ func (c *ScheduleCommand) Description() string {
         example: "0 0 * * *"  # for cron type
         # example: "2023-12-25T10:30:00Z"  # for one-time type
       scheduled_command:
-        <JSON of a command to schedule>
+        <JSON of the command to schedule>
     description: schedule a recurring or one-time command 
   `)
 }

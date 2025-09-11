@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"frank/app/dto"
 	"log/slog"
 	"strings"
 )
@@ -12,9 +13,9 @@ func NewNoopCommand() *NoopCommand {
 	return &NoopCommand{}
 }
 
-func (c *NoopCommand) Handle(ctx context.Context, dataBytes []byte) error {
+func (c *NoopCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 	slog.Info("Executing noop command",
-		slog.String("text", string(dataBytes)),
+		slog.Any("prompt", prompt),
 	)
 
 	return nil

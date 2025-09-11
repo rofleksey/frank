@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"frank/app/command"
+	"frank/app/dto"
 	"frank/app/service/scheduler"
 	"frank/app/service/telegram_sender"
 	"frank/pkg/config"
@@ -14,7 +15,7 @@ import (
 )
 
 type Command interface {
-	Handle(ctx context.Context, data []byte) error
+	Handle(ctx context.Context, prompt dto.Prompt) error
 	Name() string
 	Description() string
 }
@@ -53,10 +54,10 @@ type GenericCommandData struct {
 	Command string `json:"command"`
 }
 
-func (s *Service) Handle(ctx context.Context, dataBytes []byte) error {
+func (s *Service) Handle(ctx context.Context, prompt dto.Prompt) error {
 	var data GenericCommandData
 
-	if err := json.Unmarshal(dataBytes, &data); err != nil {
+	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
@@ -77,7 +78,7 @@ func (s *Service) Handle(ctx context.Context, dataBytes []byte) error {
 		return fmt.Errorf("command not found: %s", data.Command)
 	}
 
-	if err := cmd.Handle(ctx, dataBytes); err != nil {
+	if err := cmd.Handle(ctx, prompt); err != nil {
 		return fmt.Errorf("command.Handle failed for command %s: %w", cmd.Name(), err)
 	}
 

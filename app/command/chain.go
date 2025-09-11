@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"frank/app/dto"
 	"log/slog"
 	"strings"
 )
@@ -22,14 +23,14 @@ type ChainCommandData struct {
 	List []json.RawMessage `json:"list"`
 }
 
-func (c *ChainCommand) Handle(ctx context.Context, dataBytes []byte) error {
+func (c *ChainCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 	slog.Info("Executing chain command",
-		slog.String("text", string(dataBytes)),
+		slog.Any("prompt", prompt),
 	)
 
 	var data ChainCommandData
 
-	if err := json.Unmarshal(dataBytes, &data); err != nil {
+	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
@@ -39,7 +40,7 @@ func (c *ChainCommand) Handle(ctx context.Context, dataBytes []byte) error {
 			slog.String("text", string(subCommand)),
 		)
 
-		if err := c.actor.Handle(ctx, subCommand); err != nil {
+		if err := c.actor.Handle(ctx, prompt.BranchWithNewText(string(subCommand))); err != nil {
 			return fmt.Errorf("failed to handle subcommand %s: %w", string(subCommand), err)
 		}
 	}

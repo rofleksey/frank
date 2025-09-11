@@ -23,11 +23,6 @@ type Querier interface {
 	//  INSERT INTO migration (id, applied)
 	//  VALUES ($1, $2) RETURNING id
 	CreateMigration(ctx context.Context, arg CreateMigrationParams) (string, error)
-	//CreatePrompt
-	//
-	//  INSERT INTO prompts (created, data)
-	//  VALUES ($1, $2) RETURNING id
-	CreatePrompt(ctx context.Context, arg CreatePromptParams) (int64, error)
 	//CreateScheduledJob
 	//
 	//  INSERT INTO scheduled_jobs (name, created, data)
@@ -50,18 +45,25 @@ type Querier interface {
 	//  FROM context_entries
 	//  WHERE id = $1
 	GetContextEntry(ctx context.Context, id string) (ContextEntry, error)
-	//GetMigrations
+	// -- name: CreatePrompt :one
+	// INSERT INTO prompts (created, data)
+	// VALUES ($1, $2) RETURNING id;
+	//
+	// -- name: GetPrompt :one
+	// SELECT *
+	// FROM prompts
+	// WHERE id = $1;
+	//
+	// -- name: UpdatePrompt :exec
+	// UPDATE prompts
+	// SET data = $2
+	// WHERE id = $1;
+	//
 	//
 	//  SELECT id, applied
 	//  FROM migration
 	//  ORDER BY id
 	GetMigrations(ctx context.Context) ([]Migration, error)
-	//GetPrompt
-	//
-	//  SELECT id, created, data
-	//  FROM prompts
-	//  WHERE id = $1
-	GetPrompt(ctx context.Context, id int64) (Prompt, error)
 	//GetScheduledJob
 	//
 	//  SELECT name, created, data FROM scheduled_jobs
@@ -92,12 +94,6 @@ type Querier interface {
 	//  SELECT name, created, data FROM scheduled_jobs
 	//  ORDER BY created DESC
 	ListScheduledJobs(ctx context.Context) ([]ScheduledJob, error)
-	//UpdatePrompt
-	//
-	//  UPDATE prompts
-	//  SET data = $2
-	//  WHERE id = $1
-	UpdatePrompt(ctx context.Context, arg UpdatePromptParams) error
 }
 
 var _ Querier = (*Queries)(nil)

@@ -8,17 +8,17 @@ CREATE TABLE IF NOT EXISTS context_entries
 
 CREATE TABLE IF NOT EXISTS scheduled_jobs
 (
-    name      VARCHAR(255) PRIMARY KEY,
+    name    VARCHAR(255) PRIMARY KEY,
     created TIMESTAMP NOT NULL,
     data    JSON      NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS prompts
-(
-    id      BIGSERIAL PRIMARY KEY,
-    created TIMESTAMP NOT NULL,
-    data    JSON      NOT NULL
-);
+-- CREATE TABLE IF NOT EXISTS prompts
+-- (
+--     id      BIGSERIAL PRIMARY KEY,
+--     created TIMESTAMP NOT NULL,
+--     data    JSON      NOT NULL
+-- );
 
 CREATE TABLE IF NOT EXISTS migration
 (

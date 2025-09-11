@@ -11,10 +11,10 @@ type MessageSender interface {
 }
 
 type Actor interface {
-	Handle(ctx context.Context, dataBytes []byte) error
+	Handle(ctx context.Context, prompt dto.Prompt) error
 }
 
 type Scheduler interface {
-	ScheduleOneTime(name string, fireAt time.Time, data []byte, opts ...dto.ScheduleOptions) error
-	ScheduleCron(name, cron string, data []byte, opts ...dto.ScheduleOptions) error
+	ScheduleOneTime(name string, fireAt time.Time, prompt dto.Prompt, opts ...dto.ScheduleOptions) error
+	ScheduleCron(name, cron string, prompt dto.Prompt, opts ...dto.ScheduleOptions) error
 }

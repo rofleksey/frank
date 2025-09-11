@@ -22,3 +22,6 @@ Here is the list of commands you can use. You MUST output a valid JSON object fo
 
 # CONTEXT
 {context}
+
+# ATTACHMENTS
+{attachments}

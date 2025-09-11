@@ -48,19 +48,19 @@ WHERE name = $1;
 -- name: CountScheduledJobs :one
 SELECT COUNT(*) FROM scheduled_jobs;
 
--- name: CreatePrompt :one
-INSERT INTO prompts (created, data)
-VALUES ($1, $2) RETURNING id;
-
--- name: GetPrompt :one
-SELECT *
-FROM prompts
-WHERE id = $1;
-
--- name: UpdatePrompt :exec
-UPDATE prompts
-SET data = $2
-WHERE id = $1;
+-- -- name: CreatePrompt :one
+-- INSERT INTO prompts (created, data)
+-- VALUES ($1, $2) RETURNING id;
+--
+-- -- name: GetPrompt :one
+-- SELECT *
+-- FROM prompts
+-- WHERE id = $1;
+--
+-- -- name: UpdatePrompt :exec
+-- UPDATE prompts
+-- SET data = $2
+-- WHERE id = $1;
 
 -- name: GetMigrations :many
 SELECT *

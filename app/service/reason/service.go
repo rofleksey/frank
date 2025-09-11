@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"frank/app/client/bothub"
+	"frank/app/dto"
 	"frank/app/service/act"
 	"frank/app/service/telegram_sender"
 	"frank/pkg/config"
@@ -14,6 +15,7 @@ import (
 
 	_ "embed"
 
+	"github.com/google/uuid"
 	"github.com/samber/do"
 )
 
@@ -51,7 +53,14 @@ func (s *Service) HandleNewPrompt(text string) {
 			slog.String("text", text),
 		)
 
-		err := s.handlePromptImpl(ctx, text)
+		prompt := dto.Prompt{
+			ID:          uuid.New(),
+			Text:        text,
+			Depth:       0,
+			Attachments: nil,
+		}
+
+		err := s.handlePromptImpl(ctx, prompt)
 		if err != nil {
 			slog.Error("Failed to handle prompt",
 				slog.String("text", text),
@@ -72,15 +81,15 @@ func (s *Service) HandleNewPrompt(text string) {
 	}()
 }
 
-func (s *Service) handlePromptImpl(ctx context.Context, text string) error {
-	systemPrompt, err := s.generateSystemPrompt(ctx)
+func (s *Service) handlePromptImpl(ctx context.Context, prompt dto.Prompt) error {
+	systemPrompt, err := s.generateSystemPrompt(ctx, &prompt)
 	if err != nil {
 		return fmt.Errorf("failed to generate system prompt: %w", err)
 	}
 
 	reasonOutput, err := s.bothubClient.Process(ctx, bothub.Prompt{
 		SystemText: systemPrompt,
-		UserText:   text,
+		UserText:   prompt.Text,
 	})
 	if err != nil {
 		return fmt.Errorf("gptClient.Process: %w", err)
@@ -90,15 +99,14 @@ func (s *Service) handlePromptImpl(ctx context.Context, text string) error {
 	reasonOutput = strings.TrimPrefix(reasonOutput, "```json")
 	reasonOutput = strings.Trim(reasonOutput, "`")
 
-	dataBytes := []byte(reasonOutput)
-	if err = s.actService.Handle(ctx, dataBytes); err != nil {
+	if err = s.actService.Handle(ctx, prompt.BranchWithNewText(reasonOutput)); err != nil {
 		return fmt.Errorf("actService.Handle on %s: %w", reasonOutput, err)
 	}
 
 	return nil
 }
 
-func (s *Service) generateSystemPrompt(ctx context.Context) (string, error) {
+func (s *Service) generateSystemPrompt(ctx context.Context, prompt *dto.Prompt) (string, error) {
 	contextDescription, err := s.generateContextDescription(ctx)
 	if err != nil {
 		return "", fmt.Errorf("generateContextDescription: %w", err)
@@ -108,6 +116,7 @@ func (s *Service) generateSystemPrompt(ctx context.Context) (string, error) {
 
 	result = strings.ReplaceAll(result, "{commands}", s.actService.CommandsDescription())
 	result = strings.ReplaceAll(result, "{context}", contextDescription)
+	result = strings.ReplaceAll(result, "{attachments}", s.generateAttachmentsDescription(prompt))
 
 	return result, nil
 }
@@ -131,4 +140,22 @@ func (s *Service) generateContextDescription(ctx context.Context) (string, error
 	}
 
 	return builder.String(), nil
+}
+
+func (s *Service) generateAttachmentsDescription(prompt *dto.Prompt) string {
+	if len(prompt.Attachments) == 0 {
+		return "no attachments\n"
+	}
+
+	var builder strings.Builder
+
+	for _, att := range prompt.Attachments {
+		builder.WriteString("## ")
+		builder.WriteString(att.Name)
+		builder.WriteString("\n")
+		builder.WriteString(att.Content)
+		builder.WriteString("\n\n")
+	}
+
+	return builder.String()
 }

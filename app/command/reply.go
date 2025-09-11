@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"frank/app/dto"
 	"log/slog"
 	"strings"
 )
@@ -24,14 +25,14 @@ type ReplyCommandData struct {
 	Text string `json:"text"`
 }
 
-func (c *ReplyCommand) Handle(ctx context.Context, dataBytes []byte) error {
+func (c *ReplyCommand) Handle(ctx context.Context, prompt dto.Prompt) error {
 	slog.Info("Executing reply command",
-		slog.String("text", string(dataBytes)),
+		slog.Any("prompt", prompt),
 	)
 
 	var data ReplyCommandData
 
-	if err := json.Unmarshal(dataBytes, &data); err != nil {
+	if err := json.Unmarshal([]byte(prompt.Text), &data); err != nil {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 

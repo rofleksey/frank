@@ -17,7 +17,7 @@ import (
 var _ do.Shutdownable = (*Service)(nil)
 
 type Actor interface {
-	Handle(ctx context.Context, data []byte) error
+	Handle(ctx context.Context, prompt dto.Prompt) error
 }
 
 type Service struct {
@@ -59,7 +59,7 @@ type scheduleOptions struct {
 	destructOnFinish     bool
 }
 
-func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, data []byte, opts scheduleOptions) error {
+func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, prompt dto.Prompt, opts scheduleOptions) error {
 	destructor := func() {
 		if err := s.queries.DeleteScheduledJob(s.appCtx, name); err != nil {
 			slog.Error("Failed to delete scheduled job",
@@ -73,9 +73,9 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, dat
 		jobDef,
 		gocron.NewTask(
 			func(ctx context.Context) {
-				if err := s.actor.Handle(ctx, data); err != nil {
+				if err := s.actor.Handle(ctx, prompt); err != nil {
 					slog.ErrorContext(ctx, "Failed to handle deferred command",
-						slog.String("data", string(data)),
+						slog.Any("prompt", prompt),
 						slog.Any("error", err),
 					)
 				}
@@ -95,7 +95,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, dat
 			gocron.AfterJobRunsWithError(func(jobID uuid.UUID, jobName string, err error) {
 				slog.Error("Job finished with error",
 					slog.String("name", name),
-					slog.String("data", string(data)),
+					slog.Any("prompt", prompt),
 					slog.Any("error", err),
 				)
 
@@ -106,7 +106,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, dat
 			gocron.AfterJobRunsWithPanic(func(jobID uuid.UUID, jobName string, recoverData any) {
 				slog.Error("Job panicked",
 					slog.String("name", name),
-					slog.String("data", string(data)),
+					slog.Any("prompt", prompt),
 					slog.Any("recoverData", recoverData),
 				)
 
@@ -127,7 +127,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, dat
 	return nil
 }
 
-func (s *Service) ScheduleOneTime(name string, fireAt time.Time, data []byte, opts ...dto.ScheduleOptions) error {
+func (s *Service) ScheduleOneTime(name string, fireAt time.Time, prompt dto.Prompt, opts ...dto.ScheduleOptions) error {
 	var options dto.ScheduleOptions
 
 	if len(opts) > 0 {
@@ -146,7 +146,7 @@ func (s *Service) ScheduleOneTime(name string, fireAt time.Time, data []byte, op
 				Type:   dto.OneTimeJobType,
 				FireAt: fireAt,
 				Cron:   "",
-				Data:   data,
+				Prompt: prompt,
 			},
 		})
 		if err != nil {
@@ -158,7 +158,7 @@ func (s *Service) ScheduleOneTime(name string, fireAt time.Time, data []byte, op
 		gocron.OneTimeJobStartDateTime(
 			fireAt,
 		),
-	), data, scheduleOptions{
+	), prompt, scheduleOptions{
 		destructOnCreateFail: true,
 		destructOnFinish:     true,
 	}); err != nil {
@@ -168,7 +168,7 @@ func (s *Service) ScheduleOneTime(name string, fireAt time.Time, data []byte, op
 	return nil
 }
 
-func (s *Service) ScheduleCron(name, cron string, data []byte, opts ...dto.ScheduleOptions) error {
+func (s *Service) ScheduleCron(name, cron string, prompt dto.Prompt, opts ...dto.ScheduleOptions) error {
 	var options dto.ScheduleOptions
 
 	if len(opts) > 0 {
@@ -183,7 +183,7 @@ func (s *Service) ScheduleCron(name, cron string, data []byte, opts ...dto.Sched
 				Type:   dto.CronJobType,
 				FireAt: time.Time{},
 				Cron:   cron,
-				Data:   data,
+				Prompt: prompt,
 			},
 		})
 		if err != nil {
@@ -191,7 +191,7 @@ func (s *Service) ScheduleCron(name, cron string, data []byte, opts ...dto.Sched
 		}
 	}
 
-	if err := s.scheduleInternal(name, gocron.CronJob(cron, false), data, scheduleOptions{
+	if err := s.scheduleInternal(name, gocron.CronJob(cron, false), prompt, scheduleOptions{
 		destructOnCreateFail: true,
 		destructOnFinish:     false,
 	}); err != nil {
@@ -210,11 +210,11 @@ func (s *Service) Start() error {
 	for _, job := range jobs {
 		switch job.Data.Type {
 		case dto.OneTimeJobType:
-			if err = s.ScheduleOneTime(job.Name, job.Data.FireAt, job.Data.Data, dto.ScheduleOptions{SkipDBEntry: true}); err != nil {
+			if err = s.ScheduleOneTime(job.Name, job.Data.FireAt, job.Data.Prompt, dto.ScheduleOptions{SkipDBEntry: true}); err != nil {
 				return fmt.Errorf("ScheduleOneTime: %w", err)
 			}
 		case dto.CronJobType:
-			if err = s.ScheduleCron(job.Name, job.Data.Cron, job.Data.Data, dto.ScheduleOptions{SkipDBEntry: true}); err != nil {
+			if err = s.ScheduleCron(job.Name, job.Data.Cron, job.Data.Prompt, dto.ScheduleOptions{SkipDBEntry: true}); err != nil {
 				return fmt.Errorf("ScheduleCron: %w", err)
 			}
 		default:
