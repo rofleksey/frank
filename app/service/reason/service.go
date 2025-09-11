@@ -42,7 +42,7 @@ func New(di *do.Injector) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) HandlePrompt(text string) {
+func (s *Service) HandleNewPrompt(text string) {
 	go func() {
 		ctx, cancel := context.WithTimeout(s.appCtx, reasonTimeout)
 		defer cancel()

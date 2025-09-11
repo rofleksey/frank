@@ -6,8 +6,6 @@ package database
 
 import (
 	"context"
-
-	"frank/app/dto"
 )
 
 type Querier interface {
@@ -19,46 +17,56 @@ type Querier interface {
 	//
 	//  INSERT INTO context_entries (created, tags, text)
 	//  VALUES ($1, $2, $3) RETURNING id
-	CreateContextEntry(ctx context.Context, arg CreateContextEntryParams) (int64, error)
+	CreateContextEntry(ctx context.Context, arg CreateContextEntryParams) (string, error)
 	//CreateMigration
 	//
 	//  INSERT INTO migration (id, applied)
 	//  VALUES ($1, $2) RETURNING id
 	CreateMigration(ctx context.Context, arg CreateMigrationParams) (string, error)
+	//CreatePrompt
+	//
+	//  INSERT INTO prompts (created, data)
+	//  VALUES ($1, $2) RETURNING id
+	CreatePrompt(ctx context.Context, arg CreatePromptParams) (int64, error)
 	//CreateScheduledJob
 	//
-	//  INSERT INTO scheduled_jobs (data)
-	//  VALUES ($1)
-	//      RETURNING id
-	CreateScheduledJob(ctx context.Context, data dto.ScheduledJobData) (int64, error)
+	//  INSERT INTO scheduled_jobs (name, created, data)
+	//  VALUES ($1, $2, $3)
+	CreateScheduledJob(ctx context.Context, arg CreateScheduledJobParams) error
 	//DeleteContextEntry
 	//
 	//  DELETE
 	//  FROM context_entries
 	//  WHERE id = $1
-	DeleteContextEntry(ctx context.Context, id int64) error
+	DeleteContextEntry(ctx context.Context, id string) error
 	//DeleteScheduledJob
 	//
 	//  DELETE FROM scheduled_jobs
-	//  WHERE id = $1
-	DeleteScheduledJob(ctx context.Context, id int64) error
+	//  WHERE name = $1
+	DeleteScheduledJob(ctx context.Context, name string) error
 	//GetContextEntry
 	//
 	//  SELECT id, created, tags, text
 	//  FROM context_entries
 	//  WHERE id = $1
-	GetContextEntry(ctx context.Context, id int64) (ContextEntry, error)
+	GetContextEntry(ctx context.Context, id string) (ContextEntry, error)
 	//GetMigrations
 	//
 	//  SELECT id, applied
 	//  FROM migration
 	//  ORDER BY id
 	GetMigrations(ctx context.Context) ([]Migration, error)
+	//GetPrompt
+	//
+	//  SELECT id, created, data
+	//  FROM prompts
+	//  WHERE id = $1
+	GetPrompt(ctx context.Context, id int64) (Prompt, error)
 	//GetScheduledJob
 	//
-	//  SELECT id, data FROM scheduled_jobs
-	//  WHERE id = $1
-	GetScheduledJob(ctx context.Context, id int64) (ScheduledJob, error)
+	//  SELECT name, created, data FROM scheduled_jobs
+	//  WHERE name = $1
+	GetScheduledJob(ctx context.Context, name string) (ScheduledJob, error)
 	//ListContextEntries
 	//
 	//  SELECT id, created, tags, text
@@ -81,9 +89,15 @@ type Querier interface {
 	ListContextEntriesByTags(ctx context.Context, tags []string) ([]ContextEntry, error)
 	//ListScheduledJobs
 	//
-	//  SELECT id, data FROM scheduled_jobs
-	//  ORDER BY id
+	//  SELECT name, created, data FROM scheduled_jobs
+	//  ORDER BY created DESC
 	ListScheduledJobs(ctx context.Context) ([]ScheduledJob, error)
+	//UpdatePrompt
+	//
+	//  UPDATE prompts
+	//  SET data = $2
+	//  WHERE id = $1
+	UpdatePrompt(ctx context.Context, arg UpdatePromptParams) error
 }
 
 var _ Querier = (*Queries)(nil)

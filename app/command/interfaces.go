@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"frank/app/dto"
 	"time"
 )
 
@@ -14,6 +15,6 @@ type Actor interface {
 }
 
 type Scheduler interface {
-	ScheduleOneTime(fireAt time.Time, data []byte) error
-	ScheduleCron(cron string, data []byte) error
+	ScheduleOneTime(name string, fireAt time.Time, data []byte, opts ...dto.ScheduleOptions) error
+	ScheduleCron(name, cron string, data []byte, opts ...dto.ScheduleOptions) error
 }

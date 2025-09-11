@@ -79,8 +79,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to create telegram bot: %v", err)
 	}
-
-	go telegramBot.Start(appCtx)
 	do.ProvideValue(di, telegramBot)
 
 	do.Provide(di, bothub.NewClient)
@@ -89,6 +87,9 @@ func main() {
 	do.Provide(di, reason.New)
 	do.Provide(di, act.New)
 	do.Provide(di, scheduler.New)
+
+	go telegramBot.Start(appCtx)
+	defer telegramBot.Close(appCtx)
 
 	do.MustInvoke[*scheduler.Service](di).SetActor(do.MustInvoke[*act.Service](di))
 	go do.MustInvoke[*telegram_bot.Service](di).Run(appCtx)

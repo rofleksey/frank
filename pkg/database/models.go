@@ -11,7 +11,7 @@ import (
 )
 
 type ContextEntry struct {
-	ID      int64
+	ID      string
 	Created time.Time
 	Tags    []string
 	Text    string
@@ -22,7 +22,14 @@ type Migration struct {
 	Applied time.Time
 }
 
+type Prompt struct {
+	ID      int64
+	Created time.Time
+	Data    []byte
+}
+
 type ScheduledJob struct {
-	ID   int64
-	Data dto.ScheduledJobData
+	Name    string
+	Created time.Time
+	Data    dto.ScheduledJobData
 }

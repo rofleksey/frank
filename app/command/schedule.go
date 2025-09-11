@@ -24,6 +24,7 @@ func NewScheduleCommand(chatID int64, sender MessageSender, scheduler Scheduler)
 }
 
 type ScheduleCommandData struct {
+	Name             string          `json:"name"`
 	Type             string          `json:"type"`
 	Time             string          `json:"time"`
 	ScheduledCommand json.RawMessage `json:"scheduled_command"`
@@ -40,9 +41,13 @@ func (c *ScheduleCommand) Handle(ctx context.Context, dataBytes []byte) error {
 		return fmt.Errorf("json unmarshal: %w", err)
 	}
 
+	if data.Name == "" {
+		return fmt.Errorf("schedule command name is empty")
+	}
+
 	switch data.Type {
 	case "cron":
-		if err := c.scheduler.ScheduleCron(data.Time, data.ScheduledCommand); err != nil {
+		if err := c.scheduler.ScheduleCron(data.Name, data.Time, data.ScheduledCommand); err != nil {
 			return fmt.Errorf("ScheduleCron: %w", err)
 		}
 
@@ -55,7 +60,7 @@ func (c *ScheduleCommand) Handle(ctx context.Context, dataBytes []byte) error {
 			return fmt.Errorf("parse time: %w", err)
 		}
 
-		if err := c.scheduler.ScheduleOneTime(actualTime, data.ScheduledCommand); err != nil {
+		if err := c.scheduler.ScheduleOneTime(data.Name, actualTime, data.ScheduledCommand); err != nil {
 			return fmt.Errorf("ScheduleOneTime: %w", err)
 		}
 
@@ -78,6 +83,7 @@ func (c *ScheduleCommand) Description() string {
     type: object
     required:
       - command
+      - name
       - type
       - time
       - scheduled_command
@@ -86,11 +92,13 @@ func (c *ScheduleCommand) Description() string {
         type: string
         enum: 
           - schedule
+      name:
+        type: string
+        description: Short but meaningful name of the command, alphanumerical, snake-case
       type:
         type: string
         enum: [cron, one-time]
-        description: |
-          Type of schedule - "cron" for recurring schedules or "one-time" for single execution
+        description: Type of schedule - "cron" for recurring schedules or "one-time" for single execution
       time:
         type: string
         description: |

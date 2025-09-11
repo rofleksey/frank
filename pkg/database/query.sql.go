@@ -41,9 +41,9 @@ type CreateContextEntryParams struct {
 //
 //	INSERT INTO context_entries (created, tags, text)
 //	VALUES ($1, $2, $3) RETURNING id
-func (q *Queries) CreateContextEntry(ctx context.Context, arg CreateContextEntryParams) (int64, error) {
+func (q *Queries) CreateContextEntry(ctx context.Context, arg CreateContextEntryParams) (string, error) {
 	row := q.db.QueryRow(ctx, createContextEntry, arg.Created, arg.Tags, arg.Text)
-	var id int64
+	var id string
 	err := row.Scan(&id)
 	return id, err
 }
@@ -69,22 +69,45 @@ func (q *Queries) CreateMigration(ctx context.Context, arg CreateMigrationParams
 	return id, err
 }
 
-const createScheduledJob = `-- name: CreateScheduledJob :one
-INSERT INTO scheduled_jobs (data)
-VALUES ($1)
-    RETURNING id
+const createPrompt = `-- name: CreatePrompt :one
+INSERT INTO prompts (created, data)
+VALUES ($1, $2) RETURNING id
 `
 
-// CreateScheduledJob
+type CreatePromptParams struct {
+	Created time.Time
+	Data    []byte
+}
+
+// CreatePrompt
 //
-//	INSERT INTO scheduled_jobs (data)
-//	VALUES ($1)
-//	    RETURNING id
-func (q *Queries) CreateScheduledJob(ctx context.Context, data dto.ScheduledJobData) (int64, error) {
-	row := q.db.QueryRow(ctx, createScheduledJob, data)
+//	INSERT INTO prompts (created, data)
+//	VALUES ($1, $2) RETURNING id
+func (q *Queries) CreatePrompt(ctx context.Context, arg CreatePromptParams) (int64, error) {
+	row := q.db.QueryRow(ctx, createPrompt, arg.Created, arg.Data)
 	var id int64
 	err := row.Scan(&id)
 	return id, err
+}
+
+const createScheduledJob = `-- name: CreateScheduledJob :exec
+INSERT INTO scheduled_jobs (name, created, data)
+VALUES ($1, $2, $3)
+`
+
+type CreateScheduledJobParams struct {
+	Name    string
+	Created time.Time
+	Data    dto.ScheduledJobData
+}
+
+// CreateScheduledJob
+//
+//	INSERT INTO scheduled_jobs (name, created, data)
+//	VALUES ($1, $2, $3)
+func (q *Queries) CreateScheduledJob(ctx context.Context, arg CreateScheduledJobParams) error {
+	_, err := q.db.Exec(ctx, createScheduledJob, arg.Name, arg.Created, arg.Data)
+	return err
 }
 
 const deleteContextEntry = `-- name: DeleteContextEntry :exec
@@ -98,22 +121,22 @@ WHERE id = $1
 //	DELETE
 //	FROM context_entries
 //	WHERE id = $1
-func (q *Queries) DeleteContextEntry(ctx context.Context, id int64) error {
+func (q *Queries) DeleteContextEntry(ctx context.Context, id string) error {
 	_, err := q.db.Exec(ctx, deleteContextEntry, id)
 	return err
 }
 
 const deleteScheduledJob = `-- name: DeleteScheduledJob :exec
 DELETE FROM scheduled_jobs
-WHERE id = $1
+WHERE name = $1
 `
 
 // DeleteScheduledJob
 //
 //	DELETE FROM scheduled_jobs
-//	WHERE id = $1
-func (q *Queries) DeleteScheduledJob(ctx context.Context, id int64) error {
-	_, err := q.db.Exec(ctx, deleteScheduledJob, id)
+//	WHERE name = $1
+func (q *Queries) DeleteScheduledJob(ctx context.Context, name string) error {
+	_, err := q.db.Exec(ctx, deleteScheduledJob, name)
 	return err
 }
 
@@ -128,7 +151,7 @@ WHERE id = $1
 //	SELECT id, created, tags, text
 //	FROM context_entries
 //	WHERE id = $1
-func (q *Queries) GetContextEntry(ctx context.Context, id int64) (ContextEntry, error) {
+func (q *Queries) GetContextEntry(ctx context.Context, id string) (ContextEntry, error) {
 	row := q.db.QueryRow(ctx, getContextEntry, id)
 	var i ContextEntry
 	err := row.Scan(
@@ -171,19 +194,37 @@ func (q *Queries) GetMigrations(ctx context.Context) ([]Migration, error) {
 	return items, nil
 }
 
-const getScheduledJob = `-- name: GetScheduledJob :one
-SELECT id, data FROM scheduled_jobs
+const getPrompt = `-- name: GetPrompt :one
+SELECT id, created, data
+FROM prompts
 WHERE id = $1
+`
+
+// GetPrompt
+//
+//	SELECT id, created, data
+//	FROM prompts
+//	WHERE id = $1
+func (q *Queries) GetPrompt(ctx context.Context, id int64) (Prompt, error) {
+	row := q.db.QueryRow(ctx, getPrompt, id)
+	var i Prompt
+	err := row.Scan(&i.ID, &i.Created, &i.Data)
+	return i, err
+}
+
+const getScheduledJob = `-- name: GetScheduledJob :one
+SELECT name, created, data FROM scheduled_jobs
+WHERE name = $1
 `
 
 // GetScheduledJob
 //
-//	SELECT id, data FROM scheduled_jobs
-//	WHERE id = $1
-func (q *Queries) GetScheduledJob(ctx context.Context, id int64) (ScheduledJob, error) {
-	row := q.db.QueryRow(ctx, getScheduledJob, id)
+//	SELECT name, created, data FROM scheduled_jobs
+//	WHERE name = $1
+func (q *Queries) GetScheduledJob(ctx context.Context, name string) (ScheduledJob, error) {
+	row := q.db.QueryRow(ctx, getScheduledJob, name)
 	var i ScheduledJob
-	err := row.Scan(&i.ID, &i.Data)
+	err := row.Scan(&i.Name, &i.Created, &i.Data)
 	return i, err
 }
 
@@ -300,14 +341,14 @@ func (q *Queries) ListContextEntriesByTags(ctx context.Context, tags []string) (
 }
 
 const listScheduledJobs = `-- name: ListScheduledJobs :many
-SELECT id, data FROM scheduled_jobs
-ORDER BY id
+SELECT name, created, data FROM scheduled_jobs
+ORDER BY created DESC
 `
 
 // ListScheduledJobs
 //
-//	SELECT id, data FROM scheduled_jobs
-//	ORDER BY id
+//	SELECT name, created, data FROM scheduled_jobs
+//	ORDER BY created DESC
 func (q *Queries) ListScheduledJobs(ctx context.Context) ([]ScheduledJob, error) {
 	rows, err := q.db.Query(ctx, listScheduledJobs)
 	if err != nil {
@@ -317,7 +358,7 @@ func (q *Queries) ListScheduledJobs(ctx context.Context) ([]ScheduledJob, error)
 	items := []ScheduledJob{}
 	for rows.Next() {
 		var i ScheduledJob
-		if err := rows.Scan(&i.ID, &i.Data); err != nil {
+		if err := rows.Scan(&i.Name, &i.Created, &i.Data); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -326,4 +367,25 @@ func (q *Queries) ListScheduledJobs(ctx context.Context) ([]ScheduledJob, error)
 		return nil, err
 	}
 	return items, nil
+}
+
+const updatePrompt = `-- name: UpdatePrompt :exec
+UPDATE prompts
+SET data = $2
+WHERE id = $1
+`
+
+type UpdatePromptParams struct {
+	ID   int64
+	Data []byte
+}
+
+// UpdatePrompt
+//
+//	UPDATE prompts
+//	SET data = $2
+//	WHERE id = $1
+func (q *Queries) UpdatePrompt(ctx context.Context, arg UpdatePromptParams) error {
+	_, err := q.db.Exec(ctx, updatePrompt, arg.ID, arg.Data)
+	return err
 }

@@ -29,25 +29,38 @@ DELETE
 FROM context_entries
 WHERE id = $1;
 
--- name: CreateScheduledJob :one
-INSERT INTO scheduled_jobs (data)
-VALUES ($1)
-    RETURNING id;
+-- name: CreateScheduledJob :exec
+INSERT INTO scheduled_jobs (name, created, data)
+VALUES ($1, $2, $3);
 
 -- name: GetScheduledJob :one
 SELECT * FROM scheduled_jobs
-WHERE id = $1;
+WHERE name = $1;
 
 -- name: ListScheduledJobs :many
 SELECT * FROM scheduled_jobs
-ORDER BY id;
+ORDER BY created DESC;
 
 -- name: DeleteScheduledJob :exec
 DELETE FROM scheduled_jobs
-WHERE id = $1;
+WHERE name = $1;
 
 -- name: CountScheduledJobs :one
 SELECT COUNT(*) FROM scheduled_jobs;
+
+-- name: CreatePrompt :one
+INSERT INTO prompts (created, data)
+VALUES ($1, $2) RETURNING id;
+
+-- name: GetPrompt :one
+SELECT *
+FROM prompts
+WHERE id = $1;
+
+-- name: UpdatePrompt :exec
+UPDATE prompts
+SET data = $2
+WHERE id = $1;
 
 -- name: GetMigrations :many
 SELECT *
