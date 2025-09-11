@@ -40,7 +40,7 @@ func New(di *do.Injector) (*Service, error) {
 		command.NewNoopCommand(),
 		command.NewReplyCommand(cfg.Telegram.ChatID, telegramSender),
 		command.NewScheduleCommand(cfg.Telegram.ChatID, telegramSender, schedulerService),
-		command.NewSeqCommand(service),
+		command.NewChainCommand(service),
 	}
 
 	service.commands = commands

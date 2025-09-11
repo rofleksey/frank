@@ -27,7 +27,13 @@ func (c *NoopCommand) Name() string {
 func (c *NoopCommand) Description() string {
 	return strings.TrimSpace(`
     type: object
-    properties: {}
+    required:
+      - command
+    properties: 
+      command:
+        type: string
+        enum: 
+          - noop
     description: do nothing
   `)
 }

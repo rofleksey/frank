@@ -77,10 +77,15 @@ func (c *ScheduleCommand) Description() string {
 	return strings.TrimSpace(`
     type: object
     required:
+      - command
       - type
       - time
       - scheduled_command
     properties:
+      command:
+        type: string
+        enum: 
+          - schedule
       type:
         type: string
         enum: [cron, one-time]

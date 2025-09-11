@@ -53,12 +53,17 @@ func (c *ReplyCommand) Name() string {
 func (c *ReplyCommand) Description() string {
 	return strings.TrimSpace(`
     type: object
+    required:
+      - command
+      - text
     properties:
+      command:
+        type: string
+        enum: 
+          - reply
       text:
         type: string
         description: The text content of the reply
-    required:
-      - text
     description: sends a message to the user
   `)
 }

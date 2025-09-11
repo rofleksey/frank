@@ -120,7 +120,7 @@ func (s *Service) generateContextDescription(ctx context.Context) (string, error
 
 	var builder strings.Builder
 
-	builder.WriteString("• Current time: ")
+	builder.WriteString("- Current time: ")
 	builder.WriteString(time.Now().Format(time.RFC3339))
 	builder.WriteString("\n")
 
