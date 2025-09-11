@@ -22,3 +22,7 @@ type Scheduler interface {
 	ScheduleOneTime(name string, fireAt time.Time, prompt dto.Prompt, opts ...dto.ScheduleOptions) error
 	ScheduleCron(name, cron string, prompt dto.Prompt, opts ...dto.ScheduleOptions) error
 }
+
+type SecretsManager interface {
+	Fill(text string) string
+}

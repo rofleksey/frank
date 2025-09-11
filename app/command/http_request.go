@@ -9,15 +9,19 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
 
 type HTTPRequestCommand struct {
+	secretsManager SecretsManager
 }
 
-func NewHTTPRequestCommand() *HTTPRequestCommand {
-	return &HTTPRequestCommand{}
+func NewHTTPRequestCommand(secretsManager SecretsManager) *HTTPRequestCommand {
+	return &HTTPRequestCommand{
+		secretsManager: secretsManager,
+	}
 }
 
 type HTTPRequestCommandData struct {
@@ -53,6 +57,12 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 		return "", fmt.Errorf("empty URL")
 	}
 
+	requestData.URL = c.secretsManager.Fill(requestData.URL)
+
+	if _, err := url.ParseRequestURI(requestData.URL); err != nil {
+		return "Error: Invalid URL format. Please provide a valid URL.", nil
+	}
+
 	if requestData.Method == "" {
 		requestData.Method = http.MethodGet
 	}
@@ -66,7 +76,7 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 
 	var bodyReader io.Reader
 	if requestData.Body != nil {
-		bodyReader = bytes.NewReader([]byte(*requestData.Body))
+		bodyReader = bytes.NewReader([]byte(c.secretsManager.Fill(*requestData.Body)))
 		logger.DebugContext(ctx, "Request body included",
 			slog.Int("body_length", len(*requestData.Body)),
 		)
@@ -76,11 +86,11 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 
 	req, err := http.NewRequestWithContext(ctx, strings.ToUpper(requestData.Method), requestData.URL, bodyReader)
 	if err != nil {
-		return "", fmt.Errorf("create request: %w", err)
+		return fmt.Sprintf("Error: Failed to create HTTP request. %s", err.Error()), nil
 	}
 
 	for key, value := range requestData.Headers {
-		req.Header.Set(key, value)
+		req.Header.Set(key, c.secretsManager.Fill(value))
 	}
 
 	if len(requestData.Headers) > 0 {
@@ -101,7 +111,20 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 	duration := time.Since(startTime)
 
 	if err != nil {
-		return "", fmt.Errorf("execute request: %w", err)
+		if strings.Contains(err.Error(), "connection refused") {
+			return "Error: Connection refused. The server may be down or the URL may be incorrect.", nil
+		} else if strings.Contains(err.Error(), "no such host") {
+			return "Error: Unknown host. The domain name could not be resolved.", nil
+		} else if strings.Contains(err.Error(), "timeout") {
+			return "Error: Request timed out. The server took too long to respond.", nil
+		} else if strings.Contains(err.Error(), "TLS handshake") {
+			return "Error: SSL/TLS handshake failed. There may be an issue with the server's certificate.", nil
+		} else if strings.Contains(err.Error(), "connection reset") {
+			return "Error: Connection was reset by the remote server.", nil
+		} else if strings.Contains(err.Error(), "network is unreachable") {
+			return "Error: Network is unreachable. Please check your internet connection.", nil
+		}
+		return fmt.Sprintf("Error: Network request failed. %s", err.Error()), nil
 	}
 	defer resp.Body.Close()
 
@@ -112,7 +135,7 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", fmt.Errorf("read response body: %w", err)
+		return "Error: Failed to read response body from the server.", nil
 	}
 
 	headers := make(map[string]string)
@@ -135,7 +158,7 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
-		return "", fmt.Errorf("marshal result: %w", err)
+		return "", fmt.Errorf("json marshal: %w", err)
 	}
 
 	logger.InfoContext(ctx, "HTTP request command completed successfully",
@@ -181,7 +204,7 @@ func (c *HTTPRequestCommand) Description() string {
         type: integer
         minimum: 1
         description: Request timeout in seconds
-    description: Executes an HTTP request and returns the response with status code, headers, and body
+    description: Executes an HTTP request and returns the response with status code, headers, and body. Can replace vars with secrets.
 
     RESULT SPEC:
 

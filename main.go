@@ -7,6 +7,7 @@ import (
 	"frank/app/service/act"
 	"frank/app/service/reason"
 	"frank/app/service/scheduler"
+	"frank/app/service/secret"
 	"frank/app/service/telegram_bot"
 	"frank/app/service/telegram_sender"
 	"frank/pkg/config"
@@ -82,6 +83,7 @@ func main() {
 	do.ProvideValue(di, telegramBot)
 
 	do.Provide(di, bothub.NewClient)
+	do.Provide(di, secret.New)
 	do.Provide(di, telegram_bot.New)
 	do.Provide(di, telegram_sender.New)
 	do.Provide(di, reason.New)

@@ -13,6 +13,13 @@ Here is the list of commands you can use. You MUST output a valid JSON object fo
 
 {commands}
 
+# USING SECRETS IN COMMANDS
+Some commands (like http_request) can use secrets for authentication and sensitive data.
+- Secret variables are formatted as: %frank(name)
+- You can use secrets in command parameters such as headers, body, or query parameters
+- The available secret names are always provided in the context section
+- Example: {"Authorization": "Bearer %frank(api_token)"}
+
 # USING THE ATTACH COMMAND FOR DATA RETRIEVAL
 When you need to fetch data from external sources or execute commands that return structured data, you SHOULD use the 'attach' command to:
 1. Execute one or more data retrieval commands (like http_request)
@@ -21,6 +28,7 @@ When you need to fetch data from external sources or execute commands that retur
 
 Example workflow for HTTP requests:
 - Use 'attach' with http_request subcommand to fetch data from an API
+- Include secret variables in headers or body as needed: %frank(api_key)
 - The system will execute the request and provide you with the response data as an attachment
 - In the new prompt context, analyze the attached data and use 'reply' to inform the user
 
@@ -30,6 +38,7 @@ Example workflow for HTTP requests:
 - If an error occurs during command execution, you will be informed. You must then reason about how to handle the error (e.g., retry, use a different parameter, or explain the error to the user via `reply`).
 - You MUST use the 'chain' command to chain any silent command (commands that don't produce user output) with a 'reply' command to ensure the user receives confirmation or results.
 - Never leave the user without feedback. Always conclude task execution with a reply.
+- Use secret variables (%frank(name)) appropriately for authentication and sensitive data in commands that support them.
 
 # CONTEXT
 {context}

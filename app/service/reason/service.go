@@ -14,6 +14,7 @@ import (
 
 	_ "embed"
 
+	"github.com/elliotchance/pie/v2"
 	"github.com/samber/do"
 )
 
@@ -107,6 +108,11 @@ func (s *Service) handlePromptImpl(ctx context.Context, prompt dto.Prompt) error
 	reasonOutput = strings.TrimPrefix(reasonOutput, "```json")
 	reasonOutput = strings.Trim(reasonOutput, "`")
 
+	slog.Info("Got a result from bothub client",
+		slog.Any("prompt", prompt),
+		slog.Any("output", reasonOutput),
+	)
+
 	if _, err = s.actor.Handle(ctx, prompt.BranchWithNewText(reasonOutput)); err != nil {
 		return fmt.Errorf("actService.Handle on '%s': %w", reasonOutput, err)
 	}
@@ -141,8 +147,12 @@ func (s *Service) generateContextDescription(ctx context.Context) (string, error
 	builder.WriteString(time.Now().Format(time.RFC3339))
 	builder.WriteString("\n")
 
+	builder.WriteString("- Available secrets: ")
+	builder.WriteString(strings.Join(pie.Keys(s.cfg.Secrets), ", "))
+	builder.WriteString("\n")
+
 	for _, entry := range contextEntries {
-		builder.WriteString("• ")
+		builder.WriteString("- ")
 		builder.WriteString(entry.Text)
 		builder.WriteString("\n")
 	}
