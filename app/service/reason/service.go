@@ -65,7 +65,7 @@ func (s *Service) Handle(prompt dto.Prompt) {
 		defer cancel()
 
 		slog.Info("Handling prompt",
-			slog.String("text", prompt.Text),
+			slog.Any("prompt", prompt),
 		)
 
 		err := s.handlePromptImpl(ctx, prompt)
@@ -108,7 +108,7 @@ func (s *Service) handlePromptImpl(ctx context.Context, prompt dto.Prompt) error
 	reasonOutput = strings.Trim(reasonOutput, "`")
 
 	if _, err = s.actor.Handle(ctx, prompt.BranchWithNewText(reasonOutput)); err != nil {
-		return fmt.Errorf("actService.Handle on %s: %w", reasonOutput, err)
+		return fmt.Errorf("actService.Handle on '%s': %w", reasonOutput, err)
 	}
 
 	return nil

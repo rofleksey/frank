@@ -14,13 +14,10 @@ import (
 )
 
 type HTTPRequestCommand struct {
-	client *http.Client
 }
 
 func NewHTTPRequestCommand() *HTTPRequestCommand {
-	return &HTTPRequestCommand{
-		client: &http.Client{},
-	}
+	return &HTTPRequestCommand{}
 }
 
 type HTTPRequestCommandData struct {
@@ -38,7 +35,12 @@ type HTTPRequestResult struct {
 }
 
 func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
-	slog.Info("Executing http_request command",
+	logger := slog.With(
+		slog.String("command", c.Name()),
+		slog.String("prompt_id", prompt.ID.String()),
+	)
+
+	logger.InfoContext(ctx, "Executing http_request command",
 		slog.Any("prompt", prompt),
 	)
 
@@ -55,6 +57,8 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 		requestData.Method = http.MethodGet
 	}
 
+	logger.DebugContext(ctx, "Creating HTTP client with timeout")
+
 	client := &http.Client{
 		Timeout: time.Duration(requestData.Timeout) * time.Second,
 	}
@@ -63,6 +67,11 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 	var bodyReader io.Reader
 	if requestData.Body != nil {
 		bodyReader = bytes.NewReader([]byte(*requestData.Body))
+		logger.DebugContext(ctx, "Request body included",
+			slog.Int("body_length", len(*requestData.Body)),
+		)
+	} else {
+		logger.DebugContext(ctx, "No request body")
 	}
 
 	req, err := http.NewRequestWithContext(ctx, strings.ToUpper(requestData.Method), requestData.URL, bodyReader)
@@ -74,15 +83,32 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 		req.Header.Set(key, value)
 	}
 
-	if requestData.Body != nil && req.Header.Get("Content-Type") == "" {
-		req.Header.Set("Content-Type", "text/plain")
+	if len(requestData.Headers) > 0 {
+		logger.DebugContext(ctx, "Request headers set",
+			slog.Int("header_count", len(requestData.Headers)),
+		)
 	}
 
+	if requestData.Body != nil && req.Header.Get("Content-Type") == "" {
+		req.Header.Set("Content-Type", "text/plain")
+		logger.DebugContext(ctx, "Set default Content-Type header")
+	}
+
+	startTime := time.Now()
+	logger.InfoContext(ctx, "Sending HTTP request")
+
 	resp, err := client.Do(req)
+	duration := time.Since(startTime)
+
 	if err != nil {
 		return "", fmt.Errorf("execute request: %w", err)
 	}
 	defer resp.Body.Close()
+
+	logger.InfoContext(ctx, "HTTP request completed",
+		slog.Int("status_code", resp.StatusCode),
+		slog.Duration("duration", duration),
+	)
 
 	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -102,10 +128,19 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 		Body:       string(bodyBytes),
 	}
 
+	logger.DebugContext(ctx, "Response details",
+		slog.Int("body_length", len(result.Body)),
+		slog.Int("header_count", len(headers)),
+	)
+
 	resultJSON, err := json.Marshal(result)
 	if err != nil {
 		return "", fmt.Errorf("marshal result: %w", err)
 	}
+
+	logger.InfoContext(ctx, "HTTP request command completed successfully",
+		slog.Int("result_length", len(resultJSON)),
+	)
 
 	return string(resultJSON), nil
 }

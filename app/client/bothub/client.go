@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"frank/pkg/config"
 	"io"
+	"net"
 	"net/http"
 	"time"
 
@@ -75,6 +76,15 @@ func NewClient(di *do.Injector) (*Client, error) {
 	return &Client{
 		httpClient: &http.Client{
 			Timeout: 5 * time.Minute,
+			Transport: &http.Transport{
+				DialContext: (&net.Dialer{
+					Timeout:   5 * time.Minute,
+					KeepAlive: 5 * time.Minute,
+				}).DialContext,
+				TLSHandshakeTimeout:   5 * time.Minute,
+				ResponseHeaderTimeout: 5 * time.Minute,
+				ExpectContinueTimeout: 5 * time.Minute,
+			},
 		},
 		token:   cfg.Bothub.Token,
 		baseURL: "https://bothub.chat/api/v2/openai/v1/chat/completions",
