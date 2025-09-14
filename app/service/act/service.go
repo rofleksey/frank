@@ -24,10 +24,11 @@ type Command interface {
 }
 
 type Service struct {
-	cfg         *config.Config
-	queries     *database.Queries
-	commands    []Command
-	description string
+	cfg                   *config.Config
+	queries               *database.Queries
+	commands              []Command
+	rootDescription       string
+	additionalDescription string
 }
 
 func New(di *do.Injector) (*Service, error) {
@@ -43,20 +44,28 @@ func New(di *do.Injector) (*Service, error) {
 		queries: do.MustInvoke[*database.Queries](di),
 	}
 
-	commands := []Command{
+	rootCommands := []Command{
 		command.NewNoopCommand(),
 		command.NewReplyCommand(replyService),
+		command.NewAttachCommand(actService, reasonService),
+		command.NewChainCommand(actService),
+	}
+
+	additionalCommands := []Command{
 		command.NewScheduleCommand(replyService, schedulerService),
 		command.NewListScheduleCommand(schedulerService),
 		command.NewCancelScheduleCommand(replyService, schedulerService),
 		command.NewHTTPRequestCommand(replyService, secretsService),
 		command.NewWebSearchCommand(replyService, yandexClient),
-		command.NewAttachCommand(actService, reasonService),
-		command.NewChainCommand(actService),
 	}
 
-	actService.commands = commands
-	actService.description = generateDescription(commands)
+	allCommands := make([]Command, 0, len(additionalCommands)+len(rootCommands))
+	allCommands = append(allCommands, rootCommands...)
+	allCommands = append(allCommands, additionalCommands...)
+
+	actService.commands = allCommands
+	actService.rootDescription = generateDescription(rootCommands)
+	actService.additionalDescription = generateDescription(additionalCommands)
 
 	return actService, nil
 }
@@ -97,6 +106,10 @@ func (s *Service) Handle(ctx context.Context, prompt dto.Prompt) (string, error)
 	return output, nil
 }
 
-func (s *Service) CommandsDescription() string {
-	return s.description
+func (s *Service) RootCommandsDescription() string {
+	return s.rootDescription
+}
+
+func (s *Service) AdditionalCommandsDescription() string {
+	return s.additionalDescription
 }

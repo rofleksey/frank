@@ -33,7 +33,7 @@ func (c *Client) Process(ctx context.Context, prompt Prompt) (string, error) {
 
 	model := prompt.Model
 	if model == "" {
-		model = ModelDeepseekR1_0528
+		model = ModelDeepseekChatV3
 	}
 
 	requestBody := apiRequest{

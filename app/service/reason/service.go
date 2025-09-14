@@ -20,14 +20,15 @@ import (
 )
 
 var maxPromptDepth = 30
-var reasonTimeout = 30 * time.Minute
+var reasonTimeout = time.Hour
 
 //go:embed SYSTEM_PROMPT
 var systemPromptTemplate string
 
 type Actor interface {
 	Handle(ctx context.Context, prompt dto.Prompt) (string, error)
-	CommandsDescription() string
+	RootCommandsDescription() string
+	AdditionalCommandsDescription() string
 }
 
 type Service struct {
@@ -131,7 +132,8 @@ func (s *Service) generateSystemPrompt(ctx context.Context, prompt *dto.Prompt) 
 
 	result := systemPromptTemplate
 
-	result = strings.ReplaceAll(result, "{commands}", s.actor.CommandsDescription())
+	result = strings.ReplaceAll(result, "{root_commands}", s.actor.RootCommandsDescription())
+	result = strings.ReplaceAll(result, "{additional_commands}", s.actor.AdditionalCommandsDescription())
 	result = strings.ReplaceAll(result, "{context}", contextDescription)
 	result = strings.ReplaceAll(result, "{history}", s.generateHistoryDescription(prompt))
 

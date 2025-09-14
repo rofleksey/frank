@@ -10,6 +10,8 @@ import (
 	"github.com/samber/do"
 )
 
+var timeout = 10 * time.Minute
+
 // Client represents the Bothub chat API client
 type Client struct {
 	httpClient *http.Client
@@ -27,15 +29,15 @@ func NewClient(di *do.Injector) (*Client, error) {
 
 	return &Client{
 		httpClient: &http.Client{
-			Timeout: 5 * time.Minute,
+			Timeout: timeout,
 			Transport: &http.Transport{
 				DialContext: (&net.Dialer{
-					Timeout:   5 * time.Minute,
-					KeepAlive: 5 * time.Minute,
+					Timeout:   timeout,
+					KeepAlive: timeout,
 				}).DialContext,
-				TLSHandshakeTimeout:   5 * time.Minute,
-				ResponseHeaderTimeout: 5 * time.Minute,
-				ExpectContinueTimeout: 5 * time.Minute,
+				TLSHandshakeTimeout:   timeout,
+				ResponseHeaderTimeout: timeout,
+				ExpectContinueTimeout: timeout,
 			},
 		},
 		token:   cfg.Bothub.Token,
