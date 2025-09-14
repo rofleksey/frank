@@ -27,6 +27,6 @@ func (s *Service) handleMessage(ctx context.Context, msg *models.Message) {
 	case "/cancel":
 		s.handleCancel(ctx)
 	default:
-		s.handleUnknownMessage(ctx, msg.Text)
+		s.handleUnknownMessage(ctx, msg.ID, msg.Text)
 	}
 }

@@ -11,6 +11,7 @@ type Prompt struct {
 	ID          uuid.UUID    `json:"id"`
 	Text        string       `json:"text"`
 	Depth       int          `json:"depth"`
+	TextHistory []string     `json:"text_history"`
 	Attachments []Attachment `json:"attachments"`
 }
 
@@ -19,6 +20,7 @@ func NewPrompt(text string) Prompt {
 		ID:          uuid.New(),
 		Text:        text,
 		Depth:       0,
+		TextHistory: nil,
 		Attachments: nil,
 	}
 }
@@ -27,24 +29,32 @@ func (p *Prompt) BranchWithNewText(text string) Prompt {
 	attachmentsCopy := make([]Attachment, len(p.Attachments))
 	copy(attachmentsCopy, p.Attachments)
 
+	textHistoryCopy := make([]string, len(p.TextHistory)+1)
+	copy(textHistoryCopy[1:], p.TextHistory)
+	textHistoryCopy[0] = p.Text
+
 	return Prompt{
 		ID:          p.ID,
 		Text:        text,
 		Depth:       p.Depth + 1,
+		TextHistory: textHistoryCopy,
 		Attachments: attachmentsCopy,
 	}
 }
 
 func (p *Prompt) BranchWithNewAttachment(newAttachment Attachment) Prompt {
-	attachmentsCopy := make([]Attachment, len(p.Attachments))
-	copy(attachmentsCopy, p.Attachments)
+	attachmentsCopy := make([]Attachment, len(p.Attachments)+1)
+	copy(attachmentsCopy[1:], p.Attachments)
+	attachmentsCopy[0] = newAttachment
 
-	attachmentsCopy = append(attachmentsCopy, newAttachment)
+	textHistoryCopy := make([]string, len(p.TextHistory))
+	copy(textHistoryCopy, p.TextHistory)
 
 	return Prompt{
 		ID:          p.ID,
 		Text:        p.Text,
 		Depth:       p.Depth + 1,
+		TextHistory: textHistoryCopy,
 		Attachments: attachmentsCopy,
 	}
 }

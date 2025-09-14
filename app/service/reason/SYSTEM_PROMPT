@@ -30,7 +30,7 @@ Some commands (like http_request) can use secrets for authentication and sensiti
 
 # USING THE ATTACH COMMAND FOR DATA RETRIEVAL
 When you need to fetch data from external sources or execute commands that return structured data, you SHOULD use the 'attach' command to:
-1. Execute one or more data retrieval commands (like http_request)
+1. Execute one or more data retrieval commands (like get_scheduled_jobs, http_request e.t.c.)
 2. Receive the results as attachments in a new prompt context
 3. Process the attached data and provide a response to the user
 
@@ -99,3 +99,6 @@ NEXT ACTIONS:
 
 # CONTEXT
 {context}
+
+# PROMPT HISTORY FOR THIS REQUEST
+{history}

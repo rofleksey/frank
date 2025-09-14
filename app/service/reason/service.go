@@ -133,6 +133,7 @@ func (s *Service) generateSystemPrompt(ctx context.Context, prompt *dto.Prompt) 
 
 	result = strings.ReplaceAll(result, "{commands}", s.actor.CommandsDescription())
 	result = strings.ReplaceAll(result, "{context}", contextDescription)
+	result = strings.ReplaceAll(result, "{history}", s.generateHistoryDescription(prompt))
 
 	return result, nil
 }
@@ -160,6 +161,24 @@ func (s *Service) generateContextDescription(ctx context.Context, prompt *dto.Pr
 	}
 
 	return builder.String(), nil
+}
+
+func (s *Service) generateHistoryDescription(prompt *dto.Prompt) string {
+	if len(prompt.TextHistory) == 0 {
+		return "~this is a first prompt for this request~"
+	}
+
+	var builder strings.Builder
+
+	for _, text := range prompt.TextHistory {
+		builder.WriteString("- ")
+		builder.WriteString(text)
+		builder.WriteString("\n")
+	}
+
+	builder.WriteString("\n")
+
+	return builder.String()
 }
 
 func (s *Service) generateAttachmentsDescription(prompt *dto.Prompt) string {

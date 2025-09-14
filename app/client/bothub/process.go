@@ -39,7 +39,7 @@ func (c *Client) Process(ctx context.Context, prompt Prompt) (string, error) {
 	requestBody := apiRequest{
 		Model:       model,
 		MaxTokens:   100000,
-		Temperature: 0.2,
+		Temperature: 0.5,
 		Messages:    messages,
 	}
 

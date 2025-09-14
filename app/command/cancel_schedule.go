@@ -21,6 +21,10 @@ func NewCancelScheduleCommand(replier Replier, scheduler Scheduler) *CancelSched
 	}
 }
 
+type CancelScheduleCommandData struct {
+	Name string `json:"name"`
+}
+
 func (c *CancelScheduleCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, error) {
 	slog.Info("Executing cancel_schedule command",
 		slog.String("text", prompt.Text),
