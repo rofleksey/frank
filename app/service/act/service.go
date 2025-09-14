@@ -45,7 +45,6 @@ func New(di *do.Injector) (*Service, error) {
 	}
 
 	rootCommands := []Command{
-		command.NewNoopCommand(),
 		command.NewReplyCommand(replyService),
 		command.NewAttachCommand(actService, reasonService),
 		command.NewChainCommand(actService),
