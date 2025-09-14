@@ -50,9 +50,7 @@ func (c *ScheduleCommand) Execute(ctx context.Context, prompt dto.Prompt) (strin
 			return "", fmt.Errorf("ScheduleCron: %w", err)
 		}
 
-		if err := c.replier.Reply(ctx, "Scheduled a cron job: "+data.Time); err != nil {
-			return "", fmt.Errorf("send message: %w", err)
-		}
+		c.replier.Reply(ctx, "Scheduled a cron job: "+data.Time)
 	case "one-time":
 		actualTime, err := time.Parse(time.RFC3339, data.Time)
 		if err != nil {
@@ -63,9 +61,7 @@ func (c *ScheduleCommand) Execute(ctx context.Context, prompt dto.Prompt) (strin
 			return "", fmt.Errorf("ScheduleOneTime: %w", err)
 		}
 
-		if err := c.replier.Reply(ctx, "Scheduled a one time job at "+data.Time); err != nil {
-			return "", fmt.Errorf("send message: %w", err)
-		}
+		c.replier.Reply(ctx, "Scheduled a one time job at "+data.Time)
 	default:
 		return "", fmt.Errorf("unknown schedule type: %s", data.Type)
 	}

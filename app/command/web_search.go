@@ -44,7 +44,7 @@ func (c *WebSearchCommand) Execute(ctx context.Context, prompt dto.Prompt) (stri
 		return "", fmt.Errorf("empty query")
 	}
 
-	_ = c.replier.Reply(ctx, fmt.Sprintf("Web searching query '%s'...", requestData.Query))
+	c.replier.Reply(ctx, fmt.Sprintf("Web searching query '%s'...", requestData.Query))
 
 	result, err := c.searchEngine.WebSearch(ctx, requestData.Query)
 	if err != nil {

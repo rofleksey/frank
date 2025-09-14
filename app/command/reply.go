@@ -38,9 +38,7 @@ func (c *ReplyCommand) Execute(ctx context.Context, prompt dto.Prompt) (string, 
 		return "", fmt.Errorf("empty text")
 	}
 
-	if err := c.replier.Reply(ctx, data.Text); err != nil {
-		return "", fmt.Errorf("send message: %w", err)
-	}
+	c.replier.Reply(ctx, data.Text)
 
 	return "", nil
 }

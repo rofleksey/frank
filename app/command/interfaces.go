@@ -7,7 +7,7 @@ import (
 )
 
 type Replier interface {
-	Reply(ctx context.Context, text string) error
+	Reply(ctx context.Context, text string)
 }
 
 type Reasoner interface {

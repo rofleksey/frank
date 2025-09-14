@@ -109,7 +109,7 @@ func (c *HTTPRequestCommand) Execute(ctx context.Context, prompt dto.Prompt) (st
 	startTime := time.Now()
 	logger.InfoContext(ctx, "Sending HTTP request")
 
-	_ = c.replier.Reply(ctx, fmt.Sprintf("Executing http request to '%s'...", requestData.URL))
+	c.replier.Reply(ctx, fmt.Sprintf("Executing http request to '%s'...", requestData.URL))
 
 	resp, err := client.Do(req)
 	duration := time.Since(startTime)

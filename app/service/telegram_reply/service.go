@@ -22,7 +22,7 @@ func New(di *do.Injector) (*Service, error) {
 	}, nil
 }
 
-func (s *Service) Reply(ctx context.Context, text string) error {
+func (s *Service) Reply(ctx context.Context, text string) {
 	_, err := s.tgBot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:    s.cfg.Telegram.ChatID,
 		Text:      text,
@@ -32,7 +32,7 @@ func (s *Service) Reply(ctx context.Context, text string) error {
 		},
 	})
 	if err != nil {
-		_, err = s.tgBot.SendMessage(ctx, &bot.SendMessageParams{
+		_, _ = s.tgBot.SendMessage(ctx, &bot.SendMessageParams{
 			ChatID: s.cfg.Telegram.ChatID,
 			Text:   text,
 			LinkPreviewOptions: &models.LinkPreviewOptions{
@@ -40,5 +40,4 @@ func (s *Service) Reply(ctx context.Context, text string) error {
 			},
 		})
 	}
-	return err
 }

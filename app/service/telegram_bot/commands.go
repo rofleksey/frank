@@ -7,7 +7,7 @@ import (
 )
 
 func (s *Service) handleCancel(ctx context.Context) {
-	_ = s.replyService.Reply(ctx, "ОК")
+	s.replyService.Reply(ctx, "ОК")
 }
 
 func (s *Service) handleUnknownMessage(_ context.Context, text string) {

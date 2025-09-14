@@ -18,7 +18,7 @@ import (
 	"github.com/samber/do"
 )
 
-var maxPromptDepth = 15
+var maxPromptDepth = 30
 var reasonTimeout = 30 * time.Minute
 
 //go:embed SYSTEM_PROMPT
@@ -58,6 +58,9 @@ func (s *Service) Handle(prompt dto.Prompt) {
 		slog.Error("Max prompt depth reached",
 			slog.String("text", prompt.Text),
 		)
+
+		s.replierService.Reply(s.appCtx, "Failed to handle prompt: max prompt depth reached")
+
 		return
 	}
 
@@ -76,12 +79,7 @@ func (s *Service) Handle(prompt dto.Prompt) {
 				slog.Any("error", err),
 			)
 
-			if err := s.replierService.Reply(ctx, "Failed to handle prompt: "+err.Error()); err != nil {
-				slog.Error("Failed to send message",
-					slog.String("text", prompt.Text),
-					slog.Any("error", err),
-				)
-			}
+			s.replierService.Reply(ctx, "Failed to handle prompt: "+err.Error())
 		} else {
 			slog.Info("Prompt handle success",
 				slog.String("text", prompt.Text),
