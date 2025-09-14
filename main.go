@@ -6,6 +6,7 @@ import (
 	"frank/app/client/bothub"
 	"frank/app/client/yandex"
 	"frank/app/service/act"
+	"frank/app/service/knowledge"
 	"frank/app/service/reason"
 	"frank/app/service/scheduler"
 	"frank/app/service/secret"
@@ -86,6 +87,7 @@ func main() {
 	do.Provide(di, bothub.NewClient)
 	do.Provide(di, yandex.NewClient)
 	do.Provide(di, secret.New)
+	do.Provide(di, knowledge.New)
 	do.Provide(di, telegram_bot.New)
 	do.Provide(di, telegram_reply.New)
 	do.Provide(di, reason.New)

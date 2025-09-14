@@ -13,11 +13,6 @@ type Querier interface {
 	//
 	//  SELECT COUNT(*) FROM scheduled_jobs
 	CountScheduledJobs(ctx context.Context) (int64, error)
-	//CreateContextEntry
-	//
-	//  INSERT INTO context_entries (created, tags, text)
-	//  VALUES ($1, $2, $3) RETURNING id
-	CreateContextEntry(ctx context.Context, arg CreateContextEntryParams) (string, error)
 	//CreateMigration
 	//
 	//  INSERT INTO migration (id, applied)
@@ -28,37 +23,12 @@ type Querier interface {
 	//  INSERT INTO scheduled_jobs (name, created, data)
 	//  VALUES ($1, $2, $3)
 	CreateScheduledJob(ctx context.Context, arg CreateScheduledJobParams) error
-	//DeleteContextEntry
-	//
-	//  DELETE
-	//  FROM context_entries
-	//  WHERE id = $1
-	DeleteContextEntry(ctx context.Context, id string) error
 	//DeleteScheduledJob
 	//
 	//  DELETE FROM scheduled_jobs
 	//  WHERE name = $1
 	DeleteScheduledJob(ctx context.Context, name string) error
-	//GetContextEntry
-	//
-	//  SELECT id, created, tags, text
-	//  FROM context_entries
-	//  WHERE id = $1
-	GetContextEntry(ctx context.Context, id string) (ContextEntry, error)
-	// -- name: CreatePrompt :one
-	// INSERT INTO prompts (created, data)
-	// VALUES ($1, $2) RETURNING id;
-	//
-	// -- name: GetPrompt :one
-	// SELECT *
-	// FROM prompts
-	// WHERE id = $1;
-	//
-	// -- name: UpdatePrompt :exec
-	// UPDATE prompts
-	// SET data = $2
-	// WHERE id = $1;
-	//
+	//GetMigrations
 	//
 	//  SELECT id, applied
 	//  FROM migration
@@ -69,26 +39,6 @@ type Querier interface {
 	//  SELECT name, created, data FROM scheduled_jobs
 	//  WHERE name = $1
 	GetScheduledJob(ctx context.Context, name string) (ScheduledJob, error)
-	//ListContextEntries
-	//
-	//  SELECT id, created, tags, text
-	//  FROM context_entries
-	//  ORDER BY created DESC
-	ListContextEntries(ctx context.Context) ([]ContextEntry, error)
-	//ListContextEntriesByAnyTag
-	//
-	//  SELECT id, created, tags, text
-	//  FROM context_entries
-	//  WHERE tags && $1
-	//  ORDER BY created DESC
-	ListContextEntriesByAnyTag(ctx context.Context, tags []string) ([]ContextEntry, error)
-	//ListContextEntriesByTags
-	//
-	//  SELECT id, created, tags, text
-	//  FROM context_entries
-	//  WHERE tags @> $1
-	//  ORDER BY created DESC
-	ListContextEntriesByTags(ctx context.Context, tags []string) ([]ContextEntry, error)
 	//ListScheduledJobs
 	//
 	//  SELECT name, created, data FROM scheduled_jobs

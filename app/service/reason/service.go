@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"frank/app/client/bothub"
 	"frank/app/dto"
+	"frank/app/service/knowledge"
 	"frank/app/service/telegram_reply"
 	"frank/pkg/config"
 	"frank/pkg/database"
@@ -30,22 +31,24 @@ type Actor interface {
 }
 
 type Service struct {
-	appCtx         context.Context
-	cfg            *config.Config
-	queries        *database.Queries
-	replierService *telegram_reply.Service
-	bothubClient   *bothub.Client
+	appCtx           context.Context
+	cfg              *config.Config
+	queries          *database.Queries
+	replierService   *telegram_reply.Service
+	bothubClient     *bothub.Client
+	knowledgeService *knowledge.Service
 
 	actor Actor
 }
 
 func New(di *do.Injector) (*Service, error) {
 	return &Service{
-		appCtx:         do.MustInvoke[context.Context](di),
-		cfg:            do.MustInvoke[*config.Config](di),
-		queries:        do.MustInvoke[*database.Queries](di),
-		replierService: do.MustInvoke[*telegram_reply.Service](di),
-		bothubClient:   do.MustInvoke[*bothub.Client](di),
+		appCtx:           do.MustInvoke[context.Context](di),
+		cfg:              do.MustInvoke[*config.Config](di),
+		queries:          do.MustInvoke[*database.Queries](di),
+		replierService:   do.MustInvoke[*telegram_reply.Service](di),
+		knowledgeService: do.MustInvoke[*knowledge.Service](di),
+		bothubClient:     do.MustInvoke[*bothub.Client](di),
 	}, nil
 }
 
@@ -121,7 +124,7 @@ func (s *Service) handlePromptImpl(ctx context.Context, prompt dto.Prompt) error
 }
 
 func (s *Service) generateSystemPrompt(ctx context.Context, prompt *dto.Prompt) (string, error) {
-	contextDescription, err := s.generateContextDescription(ctx)
+	contextDescription, err := s.generateContextDescription(ctx, prompt)
 	if err != nil {
 		return "", fmt.Errorf("generateContextDescription: %w", err)
 	}
@@ -134,10 +137,10 @@ func (s *Service) generateSystemPrompt(ctx context.Context, prompt *dto.Prompt) 
 	return result, nil
 }
 
-func (s *Service) generateContextDescription(ctx context.Context) (string, error) {
-	contextEntries, err := s.queries.ListContextEntries(ctx)
+func (s *Service) generateContextDescription(ctx context.Context, prompt *dto.Prompt) (string, error) {
+	contextEntries, err := s.knowledgeService.GetRelevant(ctx, *prompt)
 	if err != nil {
-		return "", fmt.Errorf("failed to get context: %w", err)
+		return "", fmt.Errorf("knowledgeService.GetRelevant: %w", err)
 	}
 
 	var builder strings.Builder
@@ -152,7 +155,7 @@ func (s *Service) generateContextDescription(ctx context.Context) (string, error
 
 	for _, entry := range contextEntries {
 		builder.WriteString("- ")
-		builder.WriteString(entry.Text)
+		builder.WriteString(entry)
 		builder.WriteString("\n")
 	}
 

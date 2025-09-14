@@ -10,13 +10,6 @@ import (
 	"frank/app/dto"
 )
 
-type ContextEntry struct {
-	ID      string
-	Created time.Time
-	Tags    []string
-	Text    string
-}
-
 type Migration struct {
 	ID      string
 	Applied time.Time

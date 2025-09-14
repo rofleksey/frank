@@ -26,28 +26,6 @@ func (q *Queries) CountScheduledJobs(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const createContextEntry = `-- name: CreateContextEntry :one
-INSERT INTO context_entries (created, tags, text)
-VALUES ($1, $2, $3) RETURNING id
-`
-
-type CreateContextEntryParams struct {
-	Created time.Time
-	Tags    []string
-	Text    string
-}
-
-// CreateContextEntry
-//
-//	INSERT INTO context_entries (created, tags, text)
-//	VALUES ($1, $2, $3) RETURNING id
-func (q *Queries) CreateContextEntry(ctx context.Context, arg CreateContextEntryParams) (string, error) {
-	row := q.db.QueryRow(ctx, createContextEntry, arg.Created, arg.Tags, arg.Text)
-	var id string
-	err := row.Scan(&id)
-	return id, err
-}
-
 const createMigration = `-- name: CreateMigration :one
 INSERT INTO migration (id, applied)
 VALUES ($1, $2) RETURNING id
@@ -89,22 +67,6 @@ func (q *Queries) CreateScheduledJob(ctx context.Context, arg CreateScheduledJob
 	return err
 }
 
-const deleteContextEntry = `-- name: DeleteContextEntry :exec
-DELETE
-FROM context_entries
-WHERE id = $1
-`
-
-// DeleteContextEntry
-//
-//	DELETE
-//	FROM context_entries
-//	WHERE id = $1
-func (q *Queries) DeleteContextEntry(ctx context.Context, id string) error {
-	_, err := q.db.Exec(ctx, deleteContextEntry, id)
-	return err
-}
-
 const deleteScheduledJob = `-- name: DeleteScheduledJob :exec
 DELETE FROM scheduled_jobs
 WHERE name = $1
@@ -119,49 +81,13 @@ func (q *Queries) DeleteScheduledJob(ctx context.Context, name string) error {
 	return err
 }
 
-const getContextEntry = `-- name: GetContextEntry :one
-SELECT id, created, tags, text
-FROM context_entries
-WHERE id = $1
-`
-
-// GetContextEntry
-//
-//	SELECT id, created, tags, text
-//	FROM context_entries
-//	WHERE id = $1
-func (q *Queries) GetContextEntry(ctx context.Context, id string) (ContextEntry, error) {
-	row := q.db.QueryRow(ctx, getContextEntry, id)
-	var i ContextEntry
-	err := row.Scan(
-		&i.ID,
-		&i.Created,
-		&i.Tags,
-		&i.Text,
-	)
-	return i, err
-}
-
 const getMigrations = `-- name: GetMigrations :many
-
 SELECT id, applied
 FROM migration
 ORDER BY id
 `
 
-// -- name: CreatePrompt :one
-// INSERT INTO prompts (created, data)
-// VALUES ($1, $2) RETURNING id;
-//
-// -- name: GetPrompt :one
-// SELECT *
-// FROM prompts
-// WHERE id = $1;
-//
-// -- name: UpdatePrompt :exec
-// UPDATE prompts
-// SET data = $2
-// WHERE id = $1;
+// GetMigrations
 //
 //	SELECT id, applied
 //	FROM migration
@@ -200,118 +126,6 @@ func (q *Queries) GetScheduledJob(ctx context.Context, name string) (ScheduledJo
 	var i ScheduledJob
 	err := row.Scan(&i.Name, &i.Created, &i.Data)
 	return i, err
-}
-
-const listContextEntries = `-- name: ListContextEntries :many
-SELECT id, created, tags, text
-FROM context_entries
-ORDER BY created DESC
-`
-
-// ListContextEntries
-//
-//	SELECT id, created, tags, text
-//	FROM context_entries
-//	ORDER BY created DESC
-func (q *Queries) ListContextEntries(ctx context.Context) ([]ContextEntry, error) {
-	rows, err := q.db.Query(ctx, listContextEntries)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ContextEntry{}
-	for rows.Next() {
-		var i ContextEntry
-		if err := rows.Scan(
-			&i.ID,
-			&i.Created,
-			&i.Tags,
-			&i.Text,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listContextEntriesByAnyTag = `-- name: ListContextEntriesByAnyTag :many
-SELECT id, created, tags, text
-FROM context_entries
-WHERE tags && $1
-ORDER BY created DESC
-`
-
-// ListContextEntriesByAnyTag
-//
-//	SELECT id, created, tags, text
-//	FROM context_entries
-//	WHERE tags && $1
-//	ORDER BY created DESC
-func (q *Queries) ListContextEntriesByAnyTag(ctx context.Context, tags []string) ([]ContextEntry, error) {
-	rows, err := q.db.Query(ctx, listContextEntriesByAnyTag, tags)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ContextEntry{}
-	for rows.Next() {
-		var i ContextEntry
-		if err := rows.Scan(
-			&i.ID,
-			&i.Created,
-			&i.Tags,
-			&i.Text,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listContextEntriesByTags = `-- name: ListContextEntriesByTags :many
-SELECT id, created, tags, text
-FROM context_entries
-WHERE tags @> $1
-ORDER BY created DESC
-`
-
-// ListContextEntriesByTags
-//
-//	SELECT id, created, tags, text
-//	FROM context_entries
-//	WHERE tags @> $1
-//	ORDER BY created DESC
-func (q *Queries) ListContextEntriesByTags(ctx context.Context, tags []string) ([]ContextEntry, error) {
-	rows, err := q.db.Query(ctx, listContextEntriesByTags, tags)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ContextEntry{}
-	for rows.Next() {
-		var i ContextEntry
-		if err := rows.Scan(
-			&i.ID,
-			&i.Created,
-			&i.Tags,
-			&i.Text,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const listScheduledJobs = `-- name: ListScheduledJobs :many
