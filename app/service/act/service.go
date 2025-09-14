@@ -47,6 +47,8 @@ func New(di *do.Injector) (*Service, error) {
 		command.NewNoopCommand(),
 		command.NewReplyCommand(replyService),
 		command.NewScheduleCommand(replyService, schedulerService),
+		command.NewListScheduleCommand(schedulerService),
+		command.NewCancelScheduleCommand(replyService, schedulerService),
 		command.NewHTTPRequestCommand(replyService, secretsService),
 		command.NewWebSearchCommand(replyService, yandexClient),
 		command.NewAttachCommand(actService, reasonService),

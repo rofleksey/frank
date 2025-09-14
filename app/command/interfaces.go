@@ -3,6 +3,7 @@ package command
 import (
 	"context"
 	"frank/app/dto"
+	"frank/pkg/database"
 	"time"
 )
 
@@ -21,6 +22,8 @@ type Actor interface {
 type Scheduler interface {
 	ScheduleOneTime(name string, fireAt time.Time, prompt dto.Prompt, opts ...dto.ScheduleOptions) error
 	ScheduleCron(name, cron string, prompt dto.Prompt, opts ...dto.ScheduleOptions) error
+	ListJobs() ([]database.ScheduledJob, error)
+	CancelJob(name string) error
 }
 
 type SecretsManager interface {

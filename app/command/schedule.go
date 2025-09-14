@@ -103,6 +103,6 @@ func (c *ScheduleCommand) Description() string {
         # example: "2023-12-25T10:30:00Z"  # for one-time type
       scheduled_command:
         <JSON of the command to schedule>
-    description: schedule a recurring or one-time command 
+    description: schedule a recurring or one-time command (job)
   `)
 }

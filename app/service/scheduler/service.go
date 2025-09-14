@@ -82,6 +82,7 @@ func (s *Service) scheduleInternal(name string, jobDef gocron.JobDefinition, pro
 			},
 		),
 		gocron.WithName(name),
+		gocron.WithTags(name),
 		gocron.WithEventListeners(
 			gocron.AfterJobRuns(func(jobID uuid.UUID, jobName string) {
 				slog.Error("Job success",
@@ -196,6 +197,25 @@ func (s *Service) ScheduleCron(name, cron string, prompt dto.Prompt, opts ...dto
 		destructOnFinish:     false,
 	}); err != nil {
 		return fmt.Errorf("scheduleInternal: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) ListJobs() ([]database.ScheduledJob, error) {
+	jobs, err := s.queries.ListScheduledJobs(s.appCtx)
+	if err != nil {
+		return nil, fmt.Errorf("ListScheduledJobs: %w", err)
+	}
+
+	return jobs, nil
+}
+
+func (s *Service) CancelJob(name string) error {
+	s.scheduler.RemoveByTags(name)
+
+	if err := s.queries.DeleteScheduledJob(s.appCtx, name); err != nil {
+		return fmt.Errorf("DeleteScheduledJob: %w", err)
 	}
 
 	return nil
