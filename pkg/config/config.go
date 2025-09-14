@@ -8,11 +8,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type KnowledgeEntry struct {
-	Tags    []string `yaml:"tags"`
-	Content string   `yaml:"content"`
-}
-
 type Config struct {
 	Log struct {
 		TelegramToken  string `yaml:"telegramToken"`
@@ -20,7 +15,7 @@ type Config struct {
 	} `yaml:"log"`
 
 	Secrets   map[string]string `yaml:"secrets"`
-	Knowledge []KnowledgeEntry  `yaml:"knowledge"`
+	Knowledge map[string]string `yaml:"knowledge"`
 
 	Telegram struct {
 		Token  string `yaml:"token" validate:"required"`

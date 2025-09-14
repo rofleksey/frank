@@ -1,0 +1,55 @@
+steam_comments_api: >
+  ### Authentication
+  Required cookies for authenticated requests:
+  sessionid="your_session_id"
+  steamLoginSecure="your_steam_secure_login"
+
+  ### API Endpoints
+  
+  * Get Latest Comments
+  curl -X GET \
+    "https://steamcommunity.com/comment/Profile/render/{steamID}/-1/" \
+    -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+    -H "Accept: application/json" \
+    --cookie "sessionid=$SESSION_ID; steamLoginSecure=$STEAM_LOGIN_SECURE"
+
+  * Post Comment
+  curl -X POST \
+    "https://steamcommunity.com/comment/Profile/post/{steamID}/-1/" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -H "Referer: https://steamcommunity.com/profiles/{steamID}/" \
+    -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+    --cookie "sessionid=$SESSION_ID; steamLoginSecure=$STEAM_LOGIN_SECURE" \
+    -d "sessionid=$SESSION_ID&comment=$COMMENT_TEXT&feature2=-1&count=6&publishedfp=0"
+
+  * Delete Comment
+  curl -X POST \
+    "https://steamcommunity.com/comment/Profile/delete/{steamID}/" \
+    -H "Content-Type: application/x-www-form-urlencoded" \
+    -H "Referer: https://steamcommunity.com/profiles/{steamID}/" \
+    -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
+    --cookie "sessionid=$SESSION_ID; steamLoginSecure=$STEAM_LOGIN_SECURE" \
+    -d "sessionid=$SESSION_ID&gidcomment=$COMMENT_ID&start=0&count=6&feature2=-1"
+
+  ### Response Format
+  * Success Response
+  {
+    "success": true,
+    "comments_html": "<div class='commentthread_comment' id='comment_123'>...</div>"
+  }
+
+  * Error Response
+  Non-200 status codes or success: false indicate failure. Response body may contain error details.
+  
+  ### HTML Parsing
+
+  Comments are returned as HTML. Parse using:
+      Selector: .commentthread_comment
+      Attributes: id (comment ID), data-timestamp (Unix timestamp)
+      Elements: .commentthread_author_link, .commentthread_comment_text
+
+  ### Error Handling
+      Check HTTP status code (200 expected)
+      Verify success: true in JSON response
+      Handle empty comment responses gracefully
+      Validate HTML parsing results

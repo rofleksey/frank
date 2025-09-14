@@ -15,24 +15,42 @@ import (
 
 	"github.com/elliotchance/pie/v2"
 	"github.com/samber/do"
+	"gopkg.in/yaml.v3"
 )
 
 //go:embed SYSTEM_PROMPT
 var systemPromptTemplate string
 
+//go:embed base_knowledge.yaml
+var baseKnowledgeString string
+
 type Service struct {
-	appCtx       context.Context
-	cfg          *config.Config
-	queries      *database.Queries
-	bothubClient *bothub.Client
+	appCtx        context.Context
+	cfg           *config.Config
+	queries       *database.Queries
+	bothubClient  *bothub.Client
+	knowledgeBase map[string]string
 }
 
 func New(di *do.Injector) (*Service, error) {
+	cfg := do.MustInvoke[*config.Config](di)
+
+	knowledgeBase := make(map[string]string)
+
+	if err := yaml.Unmarshal([]byte(baseKnowledgeString), &knowledgeBase); err != nil {
+		return nil, fmt.Errorf("yaml unmarshal: %w", err)
+	}
+
+	for name, content := range cfg.Knowledge {
+		knowledgeBase[name] = content
+	}
+
 	return &Service{
-		appCtx:       do.MustInvoke[context.Context](di),
-		cfg:          do.MustInvoke[*config.Config](di),
-		queries:      do.MustInvoke[*database.Queries](di),
-		bothubClient: do.MustInvoke[*bothub.Client](di),
+		appCtx:        do.MustInvoke[context.Context](di),
+		cfg:           cfg,
+		queries:       do.MustInvoke[*database.Queries](di),
+		bothubClient:  do.MustInvoke[*bothub.Client](di),
+		knowledgeBase: knowledgeBase,
 	}, nil
 }
 
@@ -69,13 +87,9 @@ func (s *Service) GetRelevant(ctx context.Context, prompt dto.Prompt) ([]string,
 
 	result := make([]string, 0)
 
-outer:
-	for _, entry := range s.cfg.Knowledge {
-		for _, entryTag := range entry.Tags {
-			if pie.Contains(reasonResult.Result, entryTag) {
-				result = append(result, entry.Content)
-				continue outer
-			}
+	for name, content := range s.knowledgeBase {
+		if pie.Contains(reasonResult.Result, name) {
+			result = append(result, content)
 		}
 	}
 
@@ -83,19 +97,15 @@ outer:
 }
 
 func (s *Service) generateSystemPrompt() string {
-	tagMap := make(map[string]struct{})
+	names := make([]string, 0)
 
-	for _, entry := range s.cfg.Knowledge {
-		for _, tag := range entry.Tags {
-			tagMap[tag] = struct{}{}
-		}
+	for name := range s.knowledgeBase {
+		names = append(names, name)
 	}
-
-	tags := pie.Keys(tagMap)
 
 	result := systemPromptTemplate
 
-	result = strings.ReplaceAll(result, "{tags}", strings.Join(tags, ", "))
+	result = strings.ReplaceAll(result, "{names}", strings.Join(names, ", "))
 
 	return result
 }
