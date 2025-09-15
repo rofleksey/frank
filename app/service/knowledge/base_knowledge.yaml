@@ -11,7 +11,10 @@ steam_comments_api: >
     "https://steamcommunity.com/comment/Profile/render/{steamID}/-1/" \
     -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" \
     -H "Accept: application/json" \
-    --cookie "sessionid=$SESSION_ID; steamLoginSecure=$STEAM_LOGIN_SECURE"
+    --cookie "sessionid=$SESSION_ID; steamLoginSecure=$STEAM_LOGIN_SECURE" \
+    --data-raw 'start={start}&count={count}&feature2=-1'
+  
+  (there are 6 comments on a page)
 
   * Post Comment
   curl -X POST \
