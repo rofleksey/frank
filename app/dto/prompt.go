@@ -1,6 +1,10 @@
 package dto
 
-import "github.com/google/uuid"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 type Attachment struct {
 	Name    string `json:"name"`
@@ -9,20 +13,14 @@ type Attachment struct {
 
 type Prompt struct {
 	ID          uuid.UUID    `json:"id"`
+	MessageID   int          `json:"message_id"`
 	Text        string       `json:"text"`
 	Depth       int          `json:"depth"`
 	TextHistory []string     `json:"text_history"`
 	Attachments []Attachment `json:"attachments"`
-}
 
-func NewPrompt(text string) Prompt {
-	return Prompt{
-		ID:          uuid.New(),
-		Text:        text,
-		Depth:       0,
-		TextHistory: nil,
-		Attachments: nil,
-	}
+	Ctx    context.Context    `json:"-"`
+	Cancel context.CancelFunc `json:"-"`
 }
 
 func (p *Prompt) BranchWithNewText(text string) Prompt {
@@ -35,10 +33,13 @@ func (p *Prompt) BranchWithNewText(text string) Prompt {
 
 	return Prompt{
 		ID:          p.ID,
+		MessageID:   p.MessageID,
 		Text:        text,
 		Depth:       p.Depth + 1,
 		TextHistory: textHistoryCopy,
 		Attachments: attachmentsCopy,
+		Ctx:         p.Ctx,
+		Cancel:      p.Cancel,
 	}
 }
 
@@ -52,9 +53,16 @@ func (p *Prompt) BranchWithNewAttachment(newAttachment Attachment) Prompt {
 
 	return Prompt{
 		ID:          p.ID,
+		MessageID:   p.MessageID,
 		Text:        p.Text,
 		Depth:       p.Depth + 1,
 		TextHistory: textHistoryCopy,
 		Attachments: attachmentsCopy,
+		Ctx:         p.Ctx,
+		Cancel:      p.Cancel,
 	}
+}
+
+func (p *Prompt) CancelAllBranches() {
+	p.Cancel()
 }

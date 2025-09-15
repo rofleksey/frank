@@ -41,3 +41,20 @@ func (s *Service) Reply(ctx context.Context, text string) {
 		})
 	}
 }
+
+func (s *Service) SetReaction(ctx context.Context, messageID int, emoji string) {
+	_, _ = s.tgBot.SetMessageReaction(ctx, &bot.SetMessageReactionParams{
+		ChatID:    s.cfg.Telegram.ChatID,
+		MessageID: messageID,
+		Reaction: []models.ReactionType{
+			{
+				Type: models.ReactionTypeTypeEmoji,
+				ReactionTypeEmoji: &models.ReactionTypeEmoji{
+					Type:  models.ReactionTypeTypeEmoji,
+					Emoji: emoji,
+				},
+			},
+		},
+		IsBig: nil,
+	})
+}

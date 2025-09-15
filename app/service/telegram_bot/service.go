@@ -2,6 +2,7 @@ package telegram_bot
 
 import (
 	"context"
+	"frank/app/service/prompt_manager"
 	"frank/app/service/reason"
 	"frank/app/service/telegram_reply"
 	"frank/pkg/config"
@@ -19,6 +20,7 @@ type Service struct {
 	queries       *database.Queries
 	replyService  *telegram_reply.Service
 	reasonService *reason.Service
+	promptManager *prompt_manager.Service
 }
 
 func New(di *do.Injector) (*Service, error) {
@@ -30,6 +32,7 @@ func New(di *do.Injector) (*Service, error) {
 		queries:       do.MustInvoke[*database.Queries](di),
 		replyService:  do.MustInvoke[*telegram_reply.Service](di),
 		reasonService: do.MustInvoke[*reason.Service](di),
+		promptManager: do.MustInvoke[*prompt_manager.Service](di),
 	}
 
 	tgBot.RegisterHandlerMatchFunc(func(update *models.Update) bool {

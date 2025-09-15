@@ -6,6 +6,7 @@ import (
 	"frank/app/client/bothub"
 	"frank/app/dto"
 	"frank/app/service/knowledge"
+	"frank/app/service/prompt_manager"
 	"frank/app/service/telegram_reply"
 	"frank/pkg/config"
 	"frank/pkg/database"
@@ -38,6 +39,7 @@ type Service struct {
 	replierService   *telegram_reply.Service
 	bothubClient     *bothub.Client
 	knowledgeService *knowledge.Service
+	promptManager    *prompt_manager.Service
 
 	actor Actor
 }
@@ -50,6 +52,7 @@ func New(di *do.Injector) (*Service, error) {
 		replierService:   do.MustInvoke[*telegram_reply.Service](di),
 		knowledgeService: do.MustInvoke[*knowledge.Service](di),
 		bothubClient:     do.MustInvoke[*bothub.Client](di),
+		promptManager:    do.MustInvoke[*prompt_manager.Service](di),
 	}, nil
 }
 
@@ -68,9 +71,13 @@ func (s *Service) Handle(prompt dto.Prompt) {
 		return
 	}
 
+	s.promptManager.IncPromptCounter(prompt.ID)
+
 	go func() {
-		ctx, cancel := context.WithTimeout(s.appCtx, reasonTimeout)
+		ctx, cancel := context.WithTimeout(prompt.Ctx, reasonTimeout)
 		defer cancel()
+
+		defer s.promptManager.DecPromptCounter(prompt.ID)
 
 		slog.Info("Handling prompt",
 			slog.String("text", prompt.Text),
@@ -83,7 +90,7 @@ func (s *Service) Handle(prompt dto.Prompt) {
 				slog.Any("error", err),
 			)
 
-			s.replierService.Reply(ctx, "Failed to handle prompt: "+err.Error())
+			s.replierService.Reply(s.appCtx, "Failed to handle prompt: "+err.Error())
 		} else {
 			slog.Info("Prompt handle success",
 				slog.String("text", prompt.Text),
